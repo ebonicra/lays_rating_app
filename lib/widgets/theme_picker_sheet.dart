@@ -1,188 +1,184 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-class ThemePickerSheet extends StatefulWidget {
+class ThemeWheelDialog extends StatefulWidget {
   final ThemeMode currentTheme;
   final ValueChanged<ThemeMode> onThemeChanged;
 
-  const ThemePickerSheet({
+  const ThemeWheelDialog({
     super.key,
     required this.currentTheme,
     required this.onThemeChanged,
   });
 
   @override
-  State<ThemePickerSheet> createState() => _ThemePickerSheetState();
+  State<ThemeWheelDialog> createState() => _ThemeWheelDialogState();
 }
 
-class _ThemePickerSheetState extends State<ThemePickerSheet> {
-  late ThemeMode _selectedTheme;
+class _ThemeWheelDialogState extends State<ThemeWheelDialog>
+    with TickerProviderStateMixin {
+  late AnimationController _spinController;
+  late Animation<double> _spinAnimation;
+  late Animation<double> _scaleAnimation;
+
+  late AnimationController _closeController;
+  late Animation<double> _closeScaleAnimation;
+  late Animation<double> _closeRotateAnimation;
 
   @override
   void initState() {
     super.initState();
-    _selectedTheme = widget.currentTheme;
+
+    // Появление
+    _spinController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _spinAnimation = CurvedAnimation(
+      parent: _spinController,
+      curve: Curves.easeOutCubic,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _spinController, curve: Curves.easeOutBack),
+    );
+
+    // Исчезновение
+    _closeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _closeScaleAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _closeController, curve: Curves.easeInBack),
+    );
+
+    _closeRotateAnimation = Tween<double>(begin: 0.0, end: 3 * math.pi).animate(
+      CurvedAnimation(parent: _closeController, curve: Curves.easeInCubic),
+    );
+
+    _spinController.forward();
+  }
+
+  @override
+  void dispose() {
+    _spinController.dispose();
+    _closeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectTheme(ThemeMode mode) async {
+    await _closeController.forward();
+
+    if (mounted) {
+      widget.onThemeChanged(mode);
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: AnimatedBuilder(
+        animation: Listenable.merge([_spinAnimation, _closeScaleAnimation]),
+        builder: (context, child) {
+          final isClosing = _closeController.isAnimating ||
+              _closeController.status == AnimationStatus.completed;
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Полоска сверху
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+          if (isClosing) {
+            return Transform.scale(
+              scale: _closeScaleAnimation.value,
+              child: Transform.rotate(
+                angle: _closeRotateAnimation.value,
+                child: child,
               ),
+            );
+          }
+
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Transform.rotate(
+              angle: (1 - _spinAnimation.value) * 6 * math.pi,
+              child: child,
             ),
+          );
+        },
+        child: SizedBox(
+          width: 280,
+          height: 280,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              _buildThemeOption(
+                emoji: '☀️',
+                value: ThemeMode.light,
+                angle: -math.pi / 2,
+              ),
+              _buildThemeOption(
+                emoji: '🌙',
+                value: ThemeMode.dark,
+                angle: math.pi / 6,
+              ),
+              _buildThemeOption(
+                emoji: '📱',
+                value: ThemeMode.system,
+                angle: 5 * math.pi / 6,
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Выбери тему',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          _ThemeOption(
-            icon: Icons.light_mode_rounded,
-            emoji: '☀️',
-            label: 'Светлая',
-            subtitle: 'Всегда светлая тема',
-            isSelected: _selectedTheme == ThemeMode.light,
-            onTap: () {
-              setState(() => _selectedTheme = ThemeMode.light);
-              widget.onThemeChanged(ThemeMode.light);
-              Navigator.pop(context);
-            },
-          ),
-          const SizedBox(height: 8),
-
-          _ThemeOption(
-            icon: Icons.dark_mode_rounded,
-            emoji: '🌙',
-            label: 'Тёмная',
-            subtitle: 'Всегда тёмная тема',
-            isSelected: _selectedTheme == ThemeMode.dark,
-            onTap: () {
-              setState(() => _selectedTheme = ThemeMode.dark);
-              widget.onThemeChanged(ThemeMode.dark);
-              Navigator.pop(context);
-            },
-          ),
-          const SizedBox(height: 8),
-
-          _ThemeOption(
-            icon: Icons.phone_android_rounded,
-            emoji: '📱',
-            label: 'Системная',
-            subtitle: 'Как в настройках телефона',
-            isSelected: _selectedTheme == ThemeMode.system,
-            onTap: () {
-              setState(() => _selectedTheme = ThemeMode.system);
-              widget.onThemeChanged(ThemeMode.system);
-              Navigator.pop(context);
-            },
-          ),
-          const SizedBox(height: 8),
-        ],
+        ),
       ),
     );
   }
-}
 
-class _ThemeOption extends StatelessWidget {
-  final IconData icon;
-  final String emoji;
-  final String label;
-  final String subtitle;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ThemeOption({
-    required this.icon,
-    required this.emoji,
-    required this.label,
-    required this.subtitle,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildThemeOption({
+    required String emoji,
+    required ThemeMode value,
+    required double angle,
+  }) {
     final theme = Theme.of(context);
+    final center = 140.0;
+    final radius = 60.0;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: isSelected
-              ? theme.colorScheme.primaryContainer.withOpacity(0.5)
-              : theme.colorScheme.surfaceContainerHighest,
-          border: Border.all(
+    final dx = math.cos(angle) * radius;
+    final dy = math.sin(angle) * radius;
+
+    final isSelected = widget.currentTheme == value;
+
+    return Positioned(
+      left: center + dx - 45,
+      top: center + dy - 45,
+      child: GestureDetector(
+        onTap: () => _selectTheme(value),
+        child: Container(
+          width: 90,
+          height: 90,
+          decoration: BoxDecoration(
             color: isSelected
-                ? theme.colorScheme.primary.withOpacity(0.5)
-                : Colors.transparent,
-            width: 2,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
+                ? theme.colorScheme.primaryContainer
+                : theme.colorScheme.surfaceContainerHighest,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isSelected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outlineVariant,
+              width: 2.5,
+            ),
+            boxShadow: [
+              BoxShadow(
                 color: isSelected
-                    ? theme.colorScheme.primaryContainer
-                    : theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(14),
+                    ? theme.colorScheme.primary.withOpacity(0.5)
+                    : theme.colorScheme.shadow.withOpacity(0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 24)),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(
-                Icons.check_circle,
-                color: theme.colorScheme.primary,
-              ),
-          ],
+            ],
+          ),
+          child: Center(
+            child: Text(emoji, style: const TextStyle(fontSize: 40)),
+          ),
         ),
       ),
     );

@@ -303,12 +303,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     subtitle: Text(_getColorName(currentColor)),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      showModalBottomSheet(
+                      showDialog(
                         context: context,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                        ),
-                        builder: (context) => ColorPickerSheet(
+                        builder: (_) => ColorWheelDialog(
                           currentColor: currentColor,
                           onColorChanged: (color) {
                             AppThemeState.instance.setAccentColor(color);
@@ -320,17 +317,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   // Тема приложения
                   ListTile(
-                    leading: const Icon(Icons.palette),
+                    leading: const Icon(Icons.brightness_6_rounded),
                     title: const Text("Тема приложения"),
                     subtitle: Text(_getThemeName(currentTheme)),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
-                      showModalBottomSheet(
+                      showDialog(
                         context: context,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                        ),
-                        builder: (context) => ThemePickerSheet(
+                        builder: (_) => ThemeWheelDialog(
                           currentTheme: currentTheme,
                           onThemeChanged: (mode) {
                             AppThemeState.instance.setThemeMode(mode);

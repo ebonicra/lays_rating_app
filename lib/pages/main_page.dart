@@ -36,20 +36,17 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text("Lay's Rating"),
-      // ),
-
       body: pages[currentIndex],
 
-      floatingActionButton: SizedBox(
-        width: 80,  // диаметр
-        height: 80, // диаметр
-        child: FloatingActionButton(
-          onPressed: openChipsPage,
-          shape: const CircleBorder(),
-          child: const Icon(
-            Icons.local_fire_department,
+      floatingActionButton: Transform.translate(
+        offset: const Offset(0, 15), // ← вниз
+        child: SizedBox(
+          width: 75,
+          height: 75,
+          child: FloatingActionButton(
+            onPressed: openChipsPage,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.local_fire_department),
           ),
         ),
       ),

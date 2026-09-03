@@ -65,7 +65,9 @@ class StatSquare extends StatelessWidget {
   }
 }
 
-/// Бесконечная горизонтальная карусель статистики
+
+
+// /// Бесконечная горизонтальная карусель статистики
 class InfiniteStatsCarousel extends StatefulWidget {
   final List<StatSquareData> items;
 
@@ -80,7 +82,6 @@ class InfiniteStatsCarousel extends StatefulWidget {
 
 class InfiniteStatsCarouselState extends State<InfiniteStatsCarousel> {
   late PageController _controller;
-  bool _showHint = true;
 
   static const int _multiplier = 1000;
   late final int _totalPages = widget.items.length * _multiplier;
@@ -93,18 +94,28 @@ class InfiniteStatsCarouselState extends State<InfiniteStatsCarousel> {
       initialPage: _startPage,
       viewportFraction: 0.33,
     );
-
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => _showHint = false);
-      }
-    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  // Листаем влево
+  void _goLeft() {
+    _controller.previousPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  // Листаем вправо
+  void _goRight() {
+    _controller.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
@@ -129,91 +140,61 @@ class InfiniteStatsCarouselState extends State<InfiniteStatsCarousel> {
             );
           },
         ),
-        if (_showHint) ...[
-          Positioned(
-            left: 2,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: AnimatedOpacity(
-                opacity: _showHint ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 500),
-                child: const _PulsingArrow(isLeft: true),
-              ),
+
+        // Стрелка влево
+        Positioned(
+          left: 2,
+          top: 0,
+          bottom: 0,
+          child: Center(
+            child: _ArrowButton(
+              isLeft: true,
+              onTap: _goLeft,
             ),
           ),
-          Positioned(
-            right: 2,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: AnimatedOpacity(
-                opacity: _showHint ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 500),
-                child: const _PulsingArrow(isLeft: false),
-              ),
+        ),
+
+        // Стрелка вправо
+        Positioned(
+          right: 2,
+          top: 0,
+          bottom: 0,
+          child: Center(
+            child: _ArrowButton(
+              isLeft: false,
+              onTap: _goRight,
             ),
           ),
-        ],
+        ),
       ],
     );
   }
 }
 
-class _PulsingArrow extends StatefulWidget {
+class _ArrowButton extends StatelessWidget {
   final bool isLeft;
+  final VoidCallback onTap;
 
-  const _PulsingArrow({required this.isLeft});
-
-  @override
-  State<_PulsingArrow> createState() => _PulsingArrowState();
-}
-
-class _PulsingArrowState extends State<_PulsingArrow>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  const _ArrowButton({
+    required this.isLeft,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _scaleAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        );
-      },
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(
-          widget.isLeft
+          isLeft
               ? Icons.chevron_left_rounded
               : Icons.chevron_right_rounded,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.primary,
           size: 20,
         ),
       ),
