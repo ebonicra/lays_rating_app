@@ -283,10 +283,19 @@ class _CommentsPageState extends State<CommentsPage> {
   Widget _buildCommentsList(ThemeData theme) {
     return RefreshIndicator(
       onRefresh: _loadComments,
-      child: ListView.builder(
+      child: ListView.separated(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
         itemCount: _comments.length + (_isLoadingMore ? 1 : 0),
+        separatorBuilder: (_, index) {
+          // Не показываем разделитель после последнего комментария
+          if (index == _comments.length - 1) return const SizedBox.shrink();
+          return Divider(
+            height: 10,
+            thickness: 1,
+            color: theme.colorScheme.outlineVariant.withOpacity(0.2),
+          );
+        },
         itemBuilder: (context, index) {
           if (index == _comments.length) {
             return const Padding(
@@ -294,14 +303,9 @@ class _CommentsPageState extends State<CommentsPage> {
               child: Center(child: CircularProgressIndicator()),
             );
           }
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: index < _comments.length - 1 ? 12 : 0,
-            ),
-            child: CommentCard(
-              comment: _comments[index],
-              chipId: widget.chipId,
-            ),
+          return CommentCard(
+            comment: _comments[index],
+            chipId: widget.chipId,
           );
         },
       ),

@@ -28,11 +28,13 @@ class _FilterPageState extends State<FilterPage> {
 
   Future<void> loadPreferences() async {
     try {
-      final preferences = await PreferenceService.getPreferences();
+      final filters = await PreferenceService.getPreferences();
       setState(() {
         selectedCategories
           ..clear()
-          ..addAll(preferences);        
+          ..addAll(filters.categories);
+        _russiaOnly = filters.russiaOnly;
+        _availableOnly = filters.availableOnly;
         isLoading = false;
       });
     } catch(e){
@@ -72,7 +74,9 @@ class _FilterPageState extends State<FilterPage> {
 
     try {
       await PreferenceService.updatePreferences(
-        selectedCategories.toList(),
+        categories: selectedCategories.toList(),
+        russiaOnly: _russiaOnly,
+        availableOnly: _availableOnly,
       );
     } catch(e){
       setState(() {
@@ -157,9 +161,7 @@ Widget build(BuildContext context) {
                   icon: Icons.public_rounded,
                   label: 'Только Россия',
                   isSelected: _russiaOnly,
-                  onTap: () {
-                    setState(() => _russiaOnly = !_russiaOnly);
-                  },
+                  onTap: toggleRussiaOnly,
                 ),
               ),
               const SizedBox(width: 10),
@@ -168,9 +170,7 @@ Widget build(BuildContext context) {
                   icon: Icons.shopping_cart_rounded,
                   label: 'В продаже',
                   isSelected: _availableOnly,
-                  onTap: () {
-                    setState(() => _availableOnly = !_availableOnly);
-                  },
+                  onTap: toggleAvailableOnly,
                 ),
               ),
             ],
@@ -180,10 +180,50 @@ Widget build(BuildContext context) {
     ),
   );
 }
+
+
+Future<void> toggleRussiaOnly() async {
+  final previous = _russiaOnly;
+  setState(() => _russiaOnly = !_russiaOnly);
+
+  try {
+    await PreferenceService.updatePreferences(
+      russiaOnly: _russiaOnly,
+    );
+  } catch (e) {
+    if (mounted) {
+      setState(() => _russiaOnly = previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Не удалось сохранить настройки")),
+      );
+    }
+  }
+}
+
+  Future<void> toggleAvailableOnly() async {
+    final previous = _availableOnly;
+    setState(() => _availableOnly = !_availableOnly);
+
+    try {
+      await PreferenceService.updatePreferences(
+        availableOnly: _availableOnly,
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _availableOnly = previous);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Не удалось сохранить настройки")),
+        );
+      }
+    }
+  }
+
 }
 
 
-class _CompactFilterCard extends StatelessWidget {
+
+
+class _CompactFilterCard extends StatefulWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
@@ -197,49 +237,70 @@ class _CompactFilterCard extends StatelessWidget {
   });
 
   @override
+  State<_CompactFilterCard> createState() => _CompactFilterCardState();
+}
+
+class _CompactFilterCardState extends State<_CompactFilterCard> {
+  bool pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: isSelected
-              ? theme.colorScheme.primaryContainer
-              : theme.colorScheme.surfaceContainerHighest,
-          border: Border.all(
-            color: isSelected
-                ? theme.colorScheme.primary.withOpacity(0.5)
-                : theme.colorScheme.outlineVariant.withOpacity(0.3),
-            width: 1.5,
+    return AnimatedScale(
+      scale: pressed ? 0.95 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => pressed = true),
+        onTapUp: (_) {
+          setState(() => pressed = false);
+          widget.onTap();
+        },
+        onTapCancel: () => setState(() => pressed = false),
+
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+          decoration: BoxDecoration(
+            color: widget.isSelected
+                ? theme.colorScheme.primaryContainer
+                : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: widget.isSelected ? 12 : 8,
+                spreadRadius: widget.isSelected ? 1 : 0,
+                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(
+                  widget.isSelected ? 0.18 : 0.10,
+                ),
+              ),
+            ],
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                widget.icon,
+                size: 24,
+                color: widget.isSelected
                     ? theme.colorScheme.primary
                     : theme.colorScheme.onSurfaceVariant,
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Text(
+                widget.label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: widget.isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

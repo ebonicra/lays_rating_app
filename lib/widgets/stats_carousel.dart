@@ -5,11 +5,13 @@ class StatSquareData {
   final IconData icon;
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   const StatSquareData({
     required this.icon,
     required this.label,
     required this.value,
+    this.onTap,
   });
 }
 
@@ -18,12 +20,14 @@ class StatSquare extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   const StatSquare({
     super.key,
     required this.icon,
     required this.label,
     required this.value,
+    this.onTap,
   });
 
   @override
@@ -35,30 +39,34 @@ class StatSquare extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: SizedBox(
-        width: 90,
-        height: 90,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 22, color: accentColor),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
+      child: InkWell(
+        onTap: onTap, // ← долгое нажатие
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          width: 90,
+          height: 90,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 22, color: accentColor),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.colorScheme.onSurfaceVariant,
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -136,6 +144,7 @@ class InfiniteStatsCarouselState extends State<InfiniteStatsCarousel> {
                 icon: item.icon,
                 label: item.label,
                 value: item.value,
+                onTap: item.onTap,
               ),
             );
           },

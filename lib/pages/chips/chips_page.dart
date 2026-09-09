@@ -28,15 +28,42 @@ class _ChipsPageState extends State<ChipsPage> {
       isLoading = true;
     });
 
-    final categories = await PreferenceService.getPreferences();
-    final result = await ChipService.fetchChips(
-      categories: categories,
-    );
+    try {
+      final filters = await PreferenceService.getPreferences();
+      
+      final result = await ChipService.fetchChips(
+        categories: filters.categories,
+      );
 
-    setState(() {
-      chips = result;
-      isLoading = false;
-    });
+      // Фильтруем на клиенте
+      final filtered = result.where((chip) {
+        // Фильтр по стране
+        if (filters.russiaOnly && !chip.country.toLowerCase().contains('россия')) {
+          return false;
+        }
+
+        // Фильтр по наличию
+        if (filters.availableOnly && !chip.available) {
+          return false;
+        }
+
+        return true;
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          chips = filtered;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не удалось загрузить чипсы')),
+        );
+      }
+    }
   }
 
   @override
@@ -53,15 +80,25 @@ class _ChipsPageState extends State<ChipsPage> {
       appBar: AppBar(
         title: const Text("Рейтинг Lay's"),
       ),
-      body: ListView.builder(
-        itemCount: chips.length,
-        itemBuilder: (context, index) {
-          return ChipCard(
-            chip: chips[index],
-            onReturn: loadChips,
-          );
-        },
-      ),
+      body: chips.isEmpty
+          ? Center(
+              child: Text(
+                'Нет чипсов с такими фильтрами',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 16,
+                ),
+              ),
+            )
+          : ListView.builder(
+              itemCount: chips.length,
+              itemBuilder: (context, index) {
+                return ChipCard(
+                  chip: chips[index],
+                  onReturn: loadChips,
+                );
+              },
+            ),
     );
   }
 }

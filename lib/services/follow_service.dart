@@ -63,6 +63,7 @@ class FollowService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
+      // print(data);
       return (data['users'] as List)
           .map((u) => User.fromJson(u))
           .toList();

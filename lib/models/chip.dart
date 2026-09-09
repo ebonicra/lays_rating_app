@@ -15,19 +15,14 @@ extension ChipCategoryExtension on ChipCategory {
     switch (this) {
       case ChipCategory.classic:
         return "Классические";
-
       case ChipCategory.maxx:
         return "Maxx";
-
       case ChipCategory.stix:
         return "Stix";
-
       case ChipCategory.stax:
         return "Stax";
-
       case ChipCategory.baked:
         return "Из печи";
-
       case ChipCategory.ridged:
         return "Рифленные";
     }
@@ -49,8 +44,8 @@ class ChipRating {
     Map<String, dynamic> json
   ) {
     return ChipRating(
-      average: json["average"],
-      count: json["count"],
+      average: (json["average"] ?? 0).toDouble(),
+      count: json["count"] ?? 0,
       userRating: json["user_rating"],
     );
   }
@@ -58,7 +53,6 @@ class ChipRating {
 
 class LaysChip {
   final int id;
-
   final String name;
   final ChipCategory category;
   final String description;
@@ -68,7 +62,6 @@ class LaysChip {
   final String collection;
   final String country;
   final int releaseYear;
-  final int discontinuedYear;
   final int commentCount;
 
   const LaysChip({
@@ -82,10 +75,8 @@ class LaysChip {
     required this.collection,
     required this.country,
     required this.releaseYear,
-    required this.discontinuedYear,
     required this.commentCount,
   });
-
 
   factory LaysChip.fromJson(Map<String, dynamic> json) {
     return LaysChip(
@@ -98,9 +89,7 @@ class LaysChip {
       collection: json["collection"],
       country: json["country"],
       releaseYear: json["release_year"],
-      discontinuedYear: json["discontinued_year"],
       commentCount: json["comment_count"] ?? 0,
-
       rating: ChipRating.fromJson(
         json["rating"],
       ),
@@ -118,9 +107,7 @@ class LaysChip {
       collection: collection,
       country: country,
       releaseYear: releaseYear,
-      discontinuedYear: discontinuedYear,
       commentCount: commentCount,
-
       rating: rating ?? this.rating,
     );
   }

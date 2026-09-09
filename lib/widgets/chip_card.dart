@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lays_rating/models/chip.dart';
 import 'package:lays_rating/pages/chips/chip_details_page.dart';
 
+import '../services/auth_service.dart';
+
 class ChipCard extends StatelessWidget {
   final LaysChip chip;
   final VoidCallback? onReturn;
@@ -44,11 +46,32 @@ class ChipCard extends StatelessWidget {
 
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: Image.asset(
-                  "assets/images/chips/${chip.category.name}/${chip.imagePath}",
+                child: Image.network(
+                  '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
                   width: 100,
                   height: 130,
                   fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return Container(
+                      width: 100,
+                      height: 130,
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 100,
+                      height: 130,
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: Icon(Icons.broken_image, color: Colors.grey),
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 16),

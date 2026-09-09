@@ -182,27 +182,18 @@ class _CommentsSectionState extends State<CommentsSection> {
                 fontSize: 20,
               ),
             ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Написать
-                IconButton(
-                  onPressed: _showCreateCommentDialog,
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 23, color: Color.fromARGB(255, 141, 8, 75)),
-                  tooltip: 'Написать',
-                ),
-                const SizedBox(width: 4),
-                // Развернуть — показать все
-                IconButton(
-                  onPressed: _navigateToAllComments,
-                  icon: const Icon(Icons.format_list_bulleted_rounded, size: 25, color: Color.fromARGB(255, 141, 8, 75)),
-                  tooltip: 'Все комментарии',
-                ),
-              ],
+            // const SizedBox(height: 18),
+            IconButton(
+              onPressed: _showCreateCommentDialog,
+              icon: Icon(
+                Icons.edit_note_rounded,
+                size: 30,
+                color: theme.colorScheme.primary,
+              ),
+              tooltip: 'Написать',
             ),
           ],
         ),
-        const SizedBox(height: 12),
 
         // Контент
         if (_isLoading)
@@ -300,7 +291,11 @@ class _CommentsSectionState extends State<CommentsSection> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: _comments!.length > 5 ? 5 : _comments!.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (_, __) => Divider(
+            height: 10,
+            thickness: 1,
+            color: theme.colorScheme.outlineVariant.withOpacity(0.2),
+          ), // ← разделитель вместо Card
           itemBuilder: (context, index) {
             return CommentCard(
               comment: _comments![index],
@@ -308,71 +303,30 @@ class _CommentsSectionState extends State<CommentsSection> {
             );
           },
         ),
+        const SizedBox(height: 8),
 
         // Кнопка "Все комментарии"
-        if (_totalCount > 0) ...[
-          const SizedBox(height: 2),
+        if (_totalCount > 0)
           Center(
             child: TextButton.icon(
-              onPressed: _navigateToAllComments, // ← обновлённый метод
-              icon: const Icon(Icons.arrow_forward),
-              label: Text('Все комментарии ($_totalCount)'),
+              onPressed: _navigateToAllComments,
+              icon: const Icon(Icons.arrow_forward, size: 18), // ← побольше иконка
+              label: Text(
+                'Все комментарии ($_totalCount)',
+                style: const TextStyle(
+                  fontSize: 15, // ← побольше текст
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
           ),
-        ],
       ],
     );
   }
 }
 
-
-
-
-/// Кнопка лайка/дизлайка
-class _ReactionButton extends StatelessWidget {
-  final IconData icon;
-  final IconData activeIcon;
-  final int count;
-  final bool isActive;
-  final Color activeColor;
-  final VoidCallback onTap;
-
-  const _ReactionButton({
-    required this.icon,
-    required this.activeIcon,
-    required this.count,
-    required this.isActive,
-    required this.activeColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              size: 18,
-              color: isActive ? activeColor : Colors.grey,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '$count',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive ? activeColor : Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

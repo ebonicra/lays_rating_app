@@ -124,3 +124,110 @@ class _FilterCardState extends State<FilterCard> {
     );
   }
 }
+
+
+class _CompactFilterCard extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _CompactFilterCard({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_CompactFilterCard> createState() => _CompactFilterCardState();
+}
+
+class _CompactFilterCardState extends State<_CompactFilterCard> {
+  bool pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AnimatedScale(
+      scale: pressed ? 0.95 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => pressed = true),
+        onTapUp: (_) {
+          setState(() => pressed = false);
+          widget.onTap();
+        },
+        onTapCancel: () => setState(() => pressed = false),
+
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+          decoration: BoxDecoration(
+            color: widget.isSelected
+                ? theme.colorScheme.primaryContainer
+                : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: widget.isSelected ? 12 : 8,
+                spreadRadius: widget.isSelected ? 1 : 0,
+                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(
+                  widget.isSelected ? 0.18 : 0.10,
+                ),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                widget.icon,
+                size: 32,
+                color: widget.isSelected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                widget.label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: widget.isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 4),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: widget.isSelected
+                    ? Text(
+                        "✅ Включено",
+                        key: const ValueKey("selected"),
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      )
+                    : Text(
+                        "➖ Выключено",
+                        key: const ValueKey("unselected"),
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

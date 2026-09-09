@@ -7,12 +7,16 @@ import '../models/user_stats.dart';
 
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
+import '../services/stats_service.dart';
 import '../services/avatar_service.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/friends_page.dart';
+import '../pages/admin/admin_page.dart';
 
 import '../widgets/color_picker_sheet.dart';
 import '../widgets/theme_picker_sheet.dart';
+import '../widgets/stats_details_sheet.dart';
+import '../widgets/follows_detail_sheet.dart';
 import '../app/app.dart';
 
 import 'package:lays_rating/widgets/stats_carousel.dart';
@@ -43,7 +47,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> loadStats() async {
     try {
-      final result = await UserService.getStats();
+      final result = await StatsService.getMyStats();
       setState(() => stats = result);
     } catch (e) {
       // молча, не критично
@@ -255,36 +259,43 @@ class _ProfilePageState extends State<ProfilePage> {
                     icon: Icons.star_rounded,
                     label: 'Оценок',
                     value: '${stats?.ratingsCount ?? 0}',
+                    onTap: () => _showRatingsDetails(),
                   ),
                   StatSquareData(
                     icon: Icons.favorite_rounded,
                     label: 'Любимчиков',
                     value: '${stats?.favoritesCount ?? 0}',
+                    onTap: () => _showFavoritesDetails(),
                   ),
                   StatSquareData(
                     icon: Icons.check_circle_rounded,
                     label: 'Пробовал',
                     value: '${stats?.triedCount ?? 0}',
+                    onTap: () => _showTriedDetails(),
                   ),
                   StatSquareData(
                     icon: Icons.chat_bubble_rounded,
                     label: 'Комментариев',
                     value: '${stats?.commentsCount ?? 0}',
+                    onTap: () => _showCommentsDetails(),
                   ),
                   StatSquareData(
                     icon: Icons.trending_up_rounded,
                     label: 'Средняя',
                     value: '${stats?.averageRating ?? 0.0}',
+                    onTap: () => _showFollowingWithRatingDetails(),
                   ),
                   StatSquareData(
                     icon: Icons.group_rounded,
                     label: 'Подписчиков',
                     value: '${stats?.followersCount ?? 0}',
+                    onTap: () => _showFollowersDetails(),
                   ),
                   StatSquareData(
                     icon: Icons.person_add_alt_rounded,
                     label: 'Подписок',
                     value: '${stats?.followingCount ?? 0}',
+                    onTap: () => _showFollowingDetails(),
                   ),
                 ],
               ),
@@ -369,7 +380,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   subtitle: const Text("Управление приложением"),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    // TODO: открыть админку
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AdminPage()),
+                    );
                   },
                 ),
               ),
@@ -582,7 +596,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
   void _showDeleteAccountDialog() {
     showDialog(
       context: context,
@@ -615,4 +628,111 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
+  void _showFavoritesDetails() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => ChipsDetailSheet(
+        title: 'Любимчики',
+        icon: Icons.favorite_rounded,
+        userId: user!.id,
+        type: ChipsListType.favorites,
+      ),
+    );
+  }
+
+  void _showTriedDetails() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => ChipsDetailSheet(
+        title: 'Пробовал',
+        icon: Icons.check_circle_rounded,
+        userId: user!.id,
+        type: ChipsListType.tried,
+      ),
+    );
+  }
+
+  void _showRatingsDetails() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => ChipsDetailSheet(
+        title: 'Оценки',
+        icon: Icons.star_rounded,
+        userId: user!.id,
+        type: ChipsListType.ratings,
+      ),
+    );
+  }
+
+
+  void _showFollowingDetails() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => FollowsDetailSheet(
+        title: 'Подписки',
+        icon: Icons.person_add_alt_rounded,
+        userId: user!.id,
+        type: FollowsSheetType.following,
+      ),
+    );
+  }
+
+  void _showFollowersDetails() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => FollowsDetailSheet(
+        title: 'Подписчики',
+        icon: Icons.group_rounded,
+        userId: user!.id,
+        type: FollowsSheetType.followers,
+      ),
+    );
+  }
+
+  void _showFollowingWithRatingDetails() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => FollowsDetailSheet(
+        title: 'Средняя оценка друзей',
+        icon: Icons.trending_up_rounded,
+        userId: user!.id,
+        type: FollowsSheetType.friendsAverageRating,
+      ),
+    );
+  }
+
+  void _showCommentsDetails() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => ChipsDetailSheet(
+        title: 'Комментариев',
+        icon: Icons.chat_bubble_rounded,
+        userId: user!.id,
+        type: ChipsListType.comments,
+      ),
+    );
+  }
+
 }

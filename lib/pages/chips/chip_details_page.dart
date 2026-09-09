@@ -5,8 +5,10 @@ import 'package:lays_rating/models/chip_preference.dart';
 
 import 'package:lays_rating/services/chip_service.dart';
 import 'package:lays_rating/services/chip_preference_service.dart';
+import 'package:lays_rating/services/comments_server.dart';
 import 'package:lays_rating/services/user_service.dart'; // если ещё нет
 import 'package:lays_rating/pages/admin/edit_chip_page.dart';
+import 'package:lays_rating/widgets/comments_page.dart';
 
 
 import 'package:lays_rating/widgets/chip_details_view.dart';
@@ -117,6 +119,7 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -219,6 +222,166 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
                     onTriedChanged: toggleTried,
                   ),
                 ),
+      // bottomNavigationBar: _buildCommentBar(theme),
+    );
+  }
+
+  
+  Widget _buildCommentBar(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Поле для комментария
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                // Открываем диалог создания комментария
+                _showCommentDialog();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.edit_note_rounded,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Написать комментарий...',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Кнопка все комментарии
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CommentsPage(chipId: chip!.id),
+                ),
+              ).then((_) => loadData());
+            },
+            icon: Icon(
+              Icons.forum_rounded,
+              color: theme.colorScheme.primary,
+            ),
+            tooltip: 'Все комментарии',
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCommentDialog() {
+    final controller = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Новое важное мнение🧐',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                maxLines: 4,
+                minLines: 2,
+                decoration: InputDecoration(
+                  hintText: 'Ну давай, расскажи, какая это хуета...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () async {
+                  if (controller.text.trim().isNotEmpty) {
+                    try {
+                      await CommentsService.createComment(
+                        chipId: chip!.id,
+                        text: controller.text.trim(),
+                      );
+                      if (mounted) {
+                        Navigator.pop(context);
+                        loadData();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('✅ Комментарий добавлен')),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Не удалось добавить')),
+                        );
+                      }
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Отправить'),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

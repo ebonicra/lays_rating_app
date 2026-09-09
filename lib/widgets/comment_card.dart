@@ -4,6 +4,7 @@ import '../services/comments_server.dart';
 import '../services/auth_service.dart';
 import 'package:lays_rating/services/user_service.dart';
 import '../pages/public_profile_page.dart';
+import '../widgets/rating_badge.dart';
 
 
 class CommentCard extends StatefulWidget {
@@ -304,21 +305,14 @@ class _CommentCardState extends State<CommentCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // final comment = widget.comment;
     final isLongText = _isTextLong(_comment.text);
 
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: theme.colorScheme.surfaceContainerLow,
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.3),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
           // Автор, дата и оценка
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,13 +353,16 @@ class _CommentCardState extends State<CommentCard> {
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
+                        height: 1.2, 
                       ),
                     ),
+                    // const SizedBox(height: 0),
                     Text(
                       _formatDate(_comment.createdAt),
                       style: TextStyle(
                         fontSize: 12,
                         color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.2, 
                       ),
                     ),
                   ],
@@ -374,11 +371,11 @@ class _CommentCardState extends State<CommentCard> {
               if (_comment.rating != null) 
                 Padding(
                   padding: const EdgeInsets.only(right: 2), // ← как у кнопок
-                  child: _RatingBadge(rating: _comment.rating!),
+                  child: RatingBadge(rating: _comment.rating!)
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
 
           // Текст с разворачиванием
           if (isLongText)
@@ -416,21 +413,21 @@ class _CommentCardState extends State<CommentCard> {
           Row(
             children: [
               _ReactionButton(
-                icon: Icons.thumb_up_outlined,
-                activeIcon: Icons.thumb_up,
+                icon: Icons.favorite_outline_rounded,
+                activeIcon: Icons.favorite_rounded,
                 count: _comment.likesCount,
                 isActive: _comment.userReaction?.isLiked == true,
-                activeColor: Colors.blue,
+                activeColor: Colors.red,
                 isLoading: _isLoading,
                 onTap: _handleLike,
               ),
               const SizedBox(width: 6),
               _ReactionButton(
-                icon: Icons.thumb_down_outlined,
-                activeIcon: Icons.thumb_down,
+                icon: Icons.heart_broken_outlined,
+                activeIcon: Icons.heart_broken_rounded,
                 count: _comment.dislikesCount,
                 isActive: _comment.userReaction?.isLiked == false,
-                activeColor: Colors.red,
+                activeColor: Colors.brown,
                 isLoading: _isLoading,
                 onTap: _handleDislike,
               ),
@@ -441,12 +438,12 @@ class _CommentCardState extends State<CommentCard> {
                   icon: Icons.edit_outlined,
                   onTap: _showEditDialog,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 1),
                 _MiniCircleButton(
                   icon: Icons.delete_outline,
                   onTap: _showDeleteDialog,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 2),
               ],
 
 
@@ -488,57 +485,6 @@ class _CommentCardState extends State<CommentCard> {
 
 
 
-}
-
-/// Плашка с оценкой
-class _RatingBadge extends StatelessWidget {
-  final int rating;
-  const _RatingBadge({required this.rating});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        gradient: LinearGradient(
-          colors: _getRatingColors(rating),
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _getRatingColors(rating)[0].withOpacity(0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.star_rounded, color: Colors.white, size: 18),
-          const SizedBox(width: 4),
-          Text(
-            '$rating',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Color> _getRatingColors(int rating) {
-    if (rating >= 5) return [Color(0xFF00E676), Color(0xFF1B5E20)];
-    if (rating >= 4) return [Color(0xFFAED581),  Color(0xFF00E676)];
-    if (rating >= 3) return [Color(0xFFFFC107), Color(0xFFFF9800)];
-    if (rating >= 2) return [Color(0xFFE65100), Color(0xFFFF9800)];
-    return [Color(0xFFD32F2F), Color(0xFFB71C1C)];
-  }
 }
 
 /// Кнопка лайка/дизлайка
@@ -608,19 +554,13 @@ class _MiniCircleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        width: 25,
-        height: 25,
-        // padding: const EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          shape: BoxShape.circle,
-        ),
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.all(2),
         child: Icon(
           icon,
-          size: 15,
-          color:Colors.grey.shade600,
+          size: 16,
+          color: Colors.grey.shade600,
         ),
       ),
     );

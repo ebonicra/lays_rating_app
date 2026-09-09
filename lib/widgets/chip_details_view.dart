@@ -7,6 +7,8 @@ import 'package:lays_rating/widgets/rating_stars.dart';
 import 'package:lays_rating/widgets/comments_section.dart';
 // import 'package:lays_rating/widgets/comments_page.dart'
 
+import '../services/auth_service.dart';
+
 class ChipDetailsView extends StatefulWidget {
   final LaysChip chip;
   final ChipPreference preference;
@@ -159,7 +161,7 @@ class _ChipDetailsViewState extends State<ChipDetailsView>
 
           // КОММЕНТАРИИ
           CommentsSection(chipId: chip.id),
-          const SizedBox(height: 32),
+          // const SizedBox(height: 32),
         ],
       ),
     );
@@ -186,12 +188,33 @@ class _ChipDetailsViewState extends State<ChipDetailsView>
           children: [
             // Картинка
             ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Image.asset(
-                "assets/images/chips/${chip.category.name}/${chip.imagePath}",
-                height: 320,
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
                 width: 320,
+                height: 320,
                 fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return Container(
+                    width: 320,
+                    height: 320,
+                    color: Colors.grey.shade200,
+                    child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 320,
+                    height: 320,
+                    color: Colors.grey.shade200,
+                    child: const Center(
+                      child: Icon(Icons.broken_image, color: Colors.grey),
+                    ),
+                  );
+                },
               ),
             ),
             // Подсказка "нажми"
@@ -272,7 +295,7 @@ class _ChipDetailsViewState extends State<ChipDetailsView>
                     color: theme.colorScheme.primary,
                   ),
                   const SizedBox(height: 16),
-                  _buildInfoRow(theme, Icons.category_rounded, 'Категория', _getCategoryName(chip.category.name)),
+                  _buildInfoRow(theme, Icons.category_rounded, 'Категория', _getCategoryName(chip.category.title)),
                   const SizedBox(height: 12),
                   _buildInfoRow(theme, Icons.calendar_today_rounded, 'Год выпуска', chip.releaseYear.toString()),
                   const SizedBox(height: 12),

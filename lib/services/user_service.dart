@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/user.dart';
 import '../models/user_stats.dart';
+import '../models/stat_chip.dart';
 import 'auth_service.dart';
 
 
@@ -38,23 +39,6 @@ class UserService {
     return user;
   }
 
-  static Future<UserStats> getStats() async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception("No token");
-
-    final response = await http.get(
-      Uri.parse("${AuthService.baseUrl}/users/me/stats"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to load stats");
-    }
-
-    return UserStats.fromJson(jsonDecode(response.body));
-  }
-
-
   static Future<User> getUserById(int userId) async {
     final token = await AuthService.getToken();
     if (token == null) throw Exception("No token");
@@ -71,23 +55,7 @@ class UserService {
     return User.fromJson(jsonDecode(response.body));
   }
 
-  static Future<UserStats> getUserStats(int userId) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception("No token");
-
-    final response = await http.get(
-      Uri.parse("${AuthService.baseUrl}/users/$userId/stats"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to load stats");
-    }
-
-    return UserStats.fromJson(jsonDecode(response.body));
-  }
-
-
+ 
   static Future<User> updateProfile({
     String? displayName,
     String? username,
@@ -116,4 +84,7 @@ class UserService {
     currentUser = user;
     return user;
   }
+
+
+
 }
