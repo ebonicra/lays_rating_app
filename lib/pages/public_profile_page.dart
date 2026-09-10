@@ -5,6 +5,7 @@ import 'package:lays_rating/services/follow_service.dart';
 import 'package:lays_rating/services/user_service.dart';
 import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/widgets/stats_carousel.dart';
+import 'package:lays_rating/widgets/photo_carousel.dart';
 
 
 import '../widgets/stats_details_sheet.dart';
@@ -286,8 +287,13 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
                 ],
               ),
             ),
+            const SizedBox(height: 5),
+            
+            PhotoCarousel(
+              userId: user!.id,
+              isMyProfile: false, // ← false, потому что это чужой профиль
+            ),
             const SizedBox(height: 35),
-
 
             // Плашка статуса подписки на вас
             Container(

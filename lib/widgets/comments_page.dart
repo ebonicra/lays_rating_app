@@ -208,75 +208,127 @@ class _CommentsPageState extends State<CommentsPage> {
       appBar: AppBar(
         title: const Text('Комментарии'),
         actions: [
-          IconButton(
-            onPressed: _showCreateCommentDialog,
-            icon: const Icon(Icons.add_comment_rounded),
-            tooltip: 'Написать',
+          Transform.translate(
+            offset: const Offset(8, 0), // ← сдвигаем влево
+            child:IconButton(
+              onPressed: _showCreateCommentDialog,
+              icon: const Icon(Icons.edit_note_rounded),
+              tooltip: 'Написать',
+              iconSize: 28,
+              padding: EdgeInsets.zero,
+              visualDensity: const VisualDensity(horizontal: -4.0, vertical: -2.0),
+            )
+          ),
+          Transform.translate(
+            offset: const Offset(4, 0), // ← сдвигаем влево
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.swap_vert_rounded),
+              iconSize: 26,
+              tooltip: 'Сортировка',
+              padding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              onSelected: (value) {
+                if (value != _sortBy) {
+                  setState(() => _sortBy = value);
+                  _loadComments();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'newest',
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: SizedBox(
+                    width: 140, // ← фиксированная ширина
+                    child: Row(
+                      children: [
+                        Text(
+                          'Сначала новые',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: _sortBy == 'newest' ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        if (_sortBy == 'newest') ...[
+                          const Spacer(),
+                          Icon(
+                            Icons.check,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'oldest',
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: SizedBox(
+                    width: 140,
+                    child: Row(
+                      children: [
+                        Text(
+                          'Сначала старые',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: _sortBy == 'oldest' ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        if (_sortBy == 'oldest') ...[
+                          const Spacer(),
+                          Icon(
+                            Icons.check,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'popular',
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: SizedBox(
+                    width: 140,
+                    child: Row(
+                      children: [
+                        Text(
+                          'Сначала лучшие',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: _sortBy == 'popular' ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        if (_sortBy == 'popular') ...[
+                          const Spacer(),
+                          Icon(
+                            Icons.check,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Сортировка
-          _buildSortBar(theme),
-          const Divider(height: 1),
-
-          // Список
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? _buildErrorState(theme)
-                    : _comments.isEmpty
-                        ? _buildEmptyState(theme)
-                        : _buildCommentsList(theme),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSortBar(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          // Text(
-          //   '$_totalCount комментариев',
-          //   style: TextStyle(
-          //     color: theme.colorScheme.onSurfaceVariant,
-          //     fontSize: 14,
-          //   ),
-          // ),
-          // const Spacer(),
-          _SortChip(
-            label: 'Новые',
-            isActive: _sortBy == 'newest',
-            onTap: () {
-              setState(() => _sortBy = 'newest');
-              _loadComments();
-            },
-          ),
-          const SizedBox(width: 8),
-          _SortChip(
-            label: 'Старые',
-            isActive: _sortBy == 'oldest',
-            onTap: () {
-              setState(() => _sortBy = 'oldest');
-              _loadComments();
-            },
-          ),
-          const SizedBox(width: 8),
-          _SortChip(
-            label: 'Лучшие',
-            isActive: _sortBy == 'popular',
-            onTap: () {
-              setState(() => _sortBy = 'popular');
-              _loadComments();
-            },
-          ),
-        ],
-      ),
+      body: _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _error != null
+            ? _buildErrorState(theme)
+            : _comments.isEmpty
+                ? _buildEmptyState(theme)
+                : _buildCommentsList(theme),
     );
   }
 
@@ -367,43 +419,6 @@ class _CommentsPageState extends State<CommentsPage> {
   }
 }
 
-/// Чип для сортировки
-class _SortChip extends StatelessWidget {
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
 
-  const _SortChip({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 6),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: isActive
-              ? theme.colorScheme.primary
-              : theme.colorScheme.surfaceContainerHighest,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isActive
-                ? theme.colorScheme.onPrimary
-                : theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-    );
-  }
-}
+

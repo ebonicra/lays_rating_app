@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lays_rating/models/stat_chip.dart';
 import 'package:lays_rating/services/auth_service.dart';
+import 'package:lays_rating/pages/chips/chip_details_page.dart';
 import 'package:lays_rating/services/stats_service.dart';
 
 /// Универсальный bottom sheet для списка чипсов (любимчики, пробовал, оценки)
@@ -93,7 +94,7 @@ class ChipsDetailSheet extends StatelessWidget {
       case ChipsListType.ratings:
         return StatsService.getRatings(userId);
       case ChipsListType.comments:
-        return StatsService.getCommentedChips(userId); // ← но возвращает CommentedChip
+        return StatsService.getCommentedChips(userId);
     }
   }
 
@@ -134,13 +135,13 @@ class _ChipTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Image.network(
           '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
-          width: 70,
+          width: 60,
           height: 70,
           fit: BoxFit.cover,
           loadingBuilder: (context, child, progress) {
             if (progress == null) return child;
             return Container(
-              width: 70,
+              width: 60,
               height: 70,
               color: Colors.grey.shade200,
               child: const Center(
@@ -150,7 +151,7 @@ class _ChipTile extends StatelessWidget {
           },
           errorBuilder: (context, error, stackTrace) {
             return Container(
-              width: 70,
+              width: 60,
               height: 70,
               color: Colors.grey.shade200,
               child: const Center(
@@ -170,7 +171,12 @@ class _ChipTile extends StatelessWidget {
       ),
       onTap: () {
         Navigator.pop(context);
-        // TODO: открыть страницу чипсов
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChipDetailsPage(chipId: chip.id),
+          ),
+        );
       },
     );
   }
@@ -180,13 +186,13 @@ class _ChipTile extends StatelessWidget {
     switch (type) {
       case ChipsListType.favorites:
         if (chip.favoriteCount == 1) {
-          return 'Ты первый, кто оценил!';
+          return 'Первый, кто оценил!';
         }
         return '❤️ ${chip.favoriteCount} оценили';
       
       case ChipsListType.tried:
         if (chip.triedCount == 1) {
-          return 'Ты первый, кто попробовал!';
+          return 'Первый, кто попробовал!';
         }
         return '✅ ${chip.triedCount} попробовали';
 
@@ -194,15 +200,26 @@ class _ChipTile extends StatelessWidget {
         final myRating = chip.myRating;
         final avgRating = chip.averageRating;
         final count = chip.ratingCount;
-        
-        if (myRating != null) {
-          return '⭐ Моя: $myRating  |  Средняя: $avgRating ($count)';
-        } else {
-          return '⭐ Средняя: $avgRating($count)';
-        }
+        return '⭐ Оценка: $myRating  |  Средняя: $avgRating ($count)';
 
       case ChipsListType.comments:
-        return '💬 ${chip.myCommentsCount} | 👍 ${chip.reactionsCount}';
+        return '${chip.myCommentsCount} ${_pluralizeComments(chip.myCommentsCount)}  |  ${chip.reactionsCount} ${_pluralizeReactions(chip.reactionsCount)}';
     }
+  }
+
+  String _pluralizeComments(int count) {
+    if (count % 10 == 1 && count % 100 != 11) return 'комментарий ';
+    if ([2, 3, 4].contains(count % 10) && ![12, 13, 14].contains(count % 100)) {
+      return 'комментария ';
+    }
+    return 'комментариев';
+  }
+
+  String _pluralizeReactions(int count) {
+    if (count % 10 == 1 && count % 100 != 11) return 'реакция';
+    if ([2, 3, 4].contains(count % 10) && ![12, 13, 14].contains(count % 100)) {
+      return 'реакции';
+    }
+    return 'реакций';
   }
 }

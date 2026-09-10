@@ -18,6 +18,7 @@ import '../widgets/theme_picker_sheet.dart';
 import '../widgets/stats_details_sheet.dart';
 import '../widgets/follows_detail_sheet.dart';
 import '../app/app.dart';
+import 'package:lays_rating/widgets/photo_carousel.dart';
 
 import 'package:lays_rating/widgets/stats_carousel.dart';
 
@@ -248,7 +249,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-            const SizedBox(height: 25),
+            const SizedBox(height: 15),
 
             // Статистика
             SizedBox(
@@ -300,7 +301,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
+
+            // Карусель фото
+            PhotoCarousel(
+              userId: user!.id,
+              isMyProfile: true,
+            ),
+            const SizedBox(height: 15),
 
             // Настройки
             Card(
@@ -348,7 +356,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 2),
 
             // Друзья
             Card(
@@ -366,7 +374,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 },
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 2),
 
             // Админка
             if (user!.isAdmin) ...[
@@ -388,8 +396,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ],
-            const SizedBox(height: 10),
-
+            const SizedBox(height: 5),
 
             // Кнопка выхода
             SizedBox(
@@ -674,7 +681,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
   void _showFollowingDetails() {
     showModalBottomSheet(
       context: context,
@@ -727,7 +733,7 @@ class _ProfilePageState extends State<ProfilePage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => ChipsDetailSheet(
-        title: 'Комментариев',
+        title: 'Комментарии',
         icon: Icons.chat_bubble_rounded,
         userId: user!.id,
         type: ChipsListType.comments,

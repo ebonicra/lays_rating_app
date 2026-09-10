@@ -40,7 +40,7 @@ class StatSquare extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
-        onTap: onTap, // ← долгое нажатие
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(
           width: 90,
@@ -152,7 +152,7 @@ class InfiniteStatsCarouselState extends State<InfiniteStatsCarousel> {
 
         // Стрелка влево
         Positioned(
-          left: 2,
+          left: 0,
           top: 0,
           bottom: 0,
           child: Center(
@@ -165,7 +165,7 @@ class InfiniteStatsCarouselState extends State<InfiniteStatsCarousel> {
 
         // Стрелка вправо
         Positioned(
-          right: 2,
+          right: 0,
           top: 0,
           bottom: 0,
           child: Center(

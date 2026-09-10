@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lays_rating/models/follow_user.dart';
 import 'package:lays_rating/services/stats_service.dart';
 import 'package:lays_rating/services/auth_service.dart';
+import 'package:lays_rating/pages/public_profile_page.dart';
 
 class FollowsDetailSheet extends StatelessWidget {
   final String title;
@@ -138,7 +139,12 @@ class FollowsDetailSheet extends StatelessWidget {
           ),
           onTap: () {
             Navigator.pop(context);
-            // TODO: открыть профиль
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PublicProfilePage(userId: user.id),
+              ),
+            );
           },
         );
 
@@ -154,7 +160,12 @@ class FollowsDetailSheet extends StatelessWidget {
           subtitle: Text('@${user.username}'),
           onTap: () {
             Navigator.pop(context);
-            // TODO: открыть профиль
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PublicProfilePage(userId: user.id),
+              ),
+            );
           },
         );
     }
