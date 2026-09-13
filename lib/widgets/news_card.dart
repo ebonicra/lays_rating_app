@@ -130,10 +130,10 @@ class _NewsCardState extends State<NewsCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bgColor = _getEventColor(theme);
+    // final bgColor = _getEventColor(theme);
 
     return Container(
-      color: bgColor,
+      // color: bgColor,
       padding: const EdgeInsets.all(16),
       child: Stack(
         children: [
@@ -181,15 +181,15 @@ class _NewsCardState extends State<NewsCard> {
       case 'friend_comment':
         return theme.colorScheme.primaryContainer.withOpacity(0.2);
       case 'new_follower':
-        return theme.colorScheme.primaryContainer.withOpacity(0.4);
+        return theme.colorScheme.primaryContainer.withOpacity(0.2);
       case 'new_chip':
-        return theme.colorScheme.primaryContainer.withOpacity(0.6);
+        return theme.colorScheme.primaryContainer.withOpacity(0.2);
       case 'game_record':
-        return theme.colorScheme.primaryContainer.withOpacity(0.8);
+        return theme.colorScheme.primaryContainer.withOpacity(0.2);
       case 'admin_post':
-        return theme.colorScheme.primaryContainer.withOpacity(0.9);
+        return theme.colorScheme.primaryContainer.withOpacity(0.2);
       case 'rumor':
-        return theme.colorScheme.primaryContainer.withOpacity(0.7);
+        return theme.colorScheme.primaryContainer.withOpacity(0.2);
       default:
         return theme.colorScheme.surfaceContainerHighest;
     }
@@ -815,14 +815,93 @@ class _NewsCardState extends State<NewsCard> {
   }
 
   Widget _buildAdminPost(BuildContext context) {
-    return Row(
+    final theme = Theme.of(context);
+    final chips = item.extraData?['chips'] as List<dynamic>? ?? [];
+    final imageSize = chips.length == 1
+        ? 180.0
+        : chips.length == 2
+            ? 140.0
+            : chips.length == 3
+                ? 90.0
+                : 70.0; // 4 фото
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.campaign, size: 32, color: Colors.orange),
-        const SizedBox(width: 12),
-        Expanded(
+        // Заголовок
+        Row(
+          children: [
+            Icon(
+              Icons.campaign_rounded,
+              size: 14,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              'От админа',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Картинки (если есть)
+        if (chips.isNotEmpty) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: chips.asMap().entries.map((entry) {
+              final index = entry.key;
+              final chip = entry.value;
+              final imagePath = chip['image_path'];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => _FullScreenImageViewer(
+                        chips: chips,
+                        initialIndex: index,
+                      ),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      '${AuthService.baseUrl}/news/images/$imagePath',
+                      width: imageSize,
+                      height: imageSize,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: imageSize,
+                          height: imageSize,
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.broken_image, color: Colors.grey),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // Текст
+      if (item.text != null && item.text!.isNotEmpty)
+        Center(
           child: Text(
-            item.text ?? '',
-            style: const TextStyle(fontSize: 14),
+            item.text!,
+            textAlign: TextAlign.center, // ← центрирование строк
+            style: theme.textTheme.bodyMedium?.copyWith(
+              height: 1.3,
+              fontSize: 16,
+            ),
           ),
         ),
       ],
@@ -893,9 +972,6 @@ class _ReactionButton extends StatelessWidget {
     );
   }
 }
-
-
-
 
 class _FullScreenImageViewer extends StatefulWidget {
   final List<dynamic> chips;

@@ -57,4 +57,21 @@ class ChipPreferenceService {
     return ChipPreference.fromJson(jsonDecode(response.body));
   }
 
+
+  static Future<ChipPreference> deleteRating(int chipId) async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('Не авторизован');
+
+    final response = await http.delete(
+      Uri.parse('${AuthService.baseUrl}/chips/$chipId/preference/rating'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Не удалось удалить оценку');
+    }
+
+    return ChipPreference.fromJson(jsonDecode(response.body));
+  }
+
 }

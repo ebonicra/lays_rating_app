@@ -103,23 +103,27 @@ class _CommentsSectionState extends State<CommentsSection> {
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            left: 15,
+            right: 15,
+            top: 5,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 15,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Заголовок
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Новое важное мнение🧐',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4), // ← сдвиг текста
+                    child: const Text(
+                      'Новый комментарий',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -128,34 +132,42 @@ class _CommentsSectionState extends State<CommentsSection> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                maxLines: 4,
-                minLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Ну давай, расскажи, какая это хуета...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+
+              // Поле с самолётиком через Stack
+              Stack(
+                children: [
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    maxLines: 6,
+                    minLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Поделись своим мнением о чипсах...',
+                      hintStyle: const TextStyle(fontSize: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.fromLTRB(12, 12, 50, 12),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {
-                  if (controller.text.trim().isNotEmpty) {
-                    _createComment(controller.text.trim());
-                    Navigator.pop(context);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: IconButton(
+                      onPressed: () {
+                        if (controller.text.trim().isNotEmpty) {
+                          _createComment(controller.text.trim());
+                          Navigator.pop(context);
+                        }
+                      },
+                      icon: Icon(
+                        Icons.send_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      tooltip: 'Отправить',
+                    ),
                   ),
-                ),
-                child: const Text('Отправить'),
+                ],
               ),
             ],
           ),

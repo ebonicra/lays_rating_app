@@ -108,9 +108,17 @@ class _NewsPageState extends State<NewsPage> {
 
     return RefreshIndicator(
       onRefresh: _loadNews,
-      child: ListView.builder(
+      child: ListView.separated(
         padding: EdgeInsets.zero,
         itemCount: _news!.length,
+        separatorBuilder: (_, __) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16), // ← отступы по бокам
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: Colors.grey.shade300.withOpacity(0.5),
+          ),
+        ),
         itemBuilder: (context, index) {
           return NewsCard(item: _news![index]);
         },

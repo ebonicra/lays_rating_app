@@ -30,7 +30,13 @@ class RatingStars extends StatelessWidget {
           final isFilled = starNumber <= (rating ?? 0);
 
           return GestureDetector(
-            onTap: () => onChanged(starNumber),
+            onTap: () {
+              if (rating == starNumber) {
+                onChanged(0);
+                return;
+              }
+              onChanged(starNumber);
+            },
             child: AnimatedScale(
               scale: isFilled ? 1.1 : 1.0,
               duration: const Duration(milliseconds: 150),

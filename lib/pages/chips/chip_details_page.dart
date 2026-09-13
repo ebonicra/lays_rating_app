@@ -63,22 +63,33 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
   }
 
   Future<void> changeRating(int value) async {
-    final updated =
-        await ChipPreferenceService.updatePreference(
+    try {
+      ChipPreference updated;
+
+      if (value == 0) {
+        // Удаляем оценку
+        updated = await ChipPreferenceService.deleteRating(widget.chipId);
+      } else {
+        // Ставим оценку
+        updated = await ChipPreferenceService.updatePreference(
           chipId: widget.chipId,
           rating: value,
         );
+      }
 
-    final updatedChip =
-      await ChipService.fetchChipById(
-        widget.chipId
-      );
+      final updatedChip = await ChipService.fetchChipById(widget.chipId);
 
-
-    setState(() {
-      preference = updated;
-      chip = updatedChip;
-    });
+      setState(() {
+        preference = updated;
+        chip = updatedChip;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
+    }
   }
 
   Future<void> toggleFavorite() async {
