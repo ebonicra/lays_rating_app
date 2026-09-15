@@ -12,16 +12,44 @@ class CreateNewsPage extends StatefulWidget {
 
 class _CreateNewsPageState extends State<CreateNewsPage> {
   final TextEditingController _textController = TextEditingController();
+  final TextEditingController _pollQuestionController = TextEditingController(); // ← для вопроса опроса
   final List<_RumorChip> _chips = [];
+  final List<_PollOption> _pollOptions = [];
   String _newsType = 'admin_post';
   String _source = '';
 
   static const int _maxChips = 4;
+  static const int _maxPollOptions = 4;
+  static const int _minPollOptions = 2;
+
+  @override
+  void initState() {
+    super.initState();
+    // По умолчанию 2 варианта опроса
+    _pollOptions.add(_PollOption());
+    _pollOptions.add(_PollOption());
+  }
+
 
   @override
   void dispose() {
     _textController.dispose();
+    _pollQuestionController.dispose();
     super.dispose();
+  }
+
+  void _addPollOption() {
+    if (_pollOptions.length >= _maxPollOptions) return;
+    setState(() {
+      _pollOptions.add(_PollOption());
+    });
+  }
+
+  void _removePollOption(int index) {
+    if (_pollOptions.length <= _minPollOptions) return;
+    setState(() {
+      _pollOptions.removeAt(index);
+    });
   }
 
   Future<void> _pickImageForSlot(int index) async {
@@ -66,8 +94,28 @@ class _CreateNewsPageState extends State<CreateNewsPage> {
       }
     }
 
+    if (_newsType == 'poll') {
+      if (_pollQuestionController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Введите вопрос')),
+        );
+        return;
+      }
+      
+      final filledOptions = _pollOptions.where(
+        (o) => o.textController.text.trim().isNotEmpty,
+      ).toList();
+      
+      if (filledOptions.length < 2) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Заполните минимум 2 варианта')),
+        );
+        return;
+      }
+    }
+
     try {
-      // Загружаем картинки (для ВСЕХ типов)
+      // Загружаем картинки для новости (слухи/обычный пост)
       final chipsData = [];
       for (final chip in _chips) {
         if (chip.localImagePath != null) {
@@ -75,24 +123,39 @@ class _CreateNewsPageState extends State<CreateNewsPage> {
           chipsData.add({'image_path': imagePath});
         }
       }
-      print('Загружено картинок: ${chipsData.length}');
 
       // Формируем extra_data
       Map<String, dynamic>? extraData;
-      
+
       if (_newsType == 'rumor') {
         extraData = {
           'chips': chipsData,
           'source': _source,
         };
-      } else if (chipsData.isNotEmpty) {
-        // ← Для обычного поста тоже сохраняем картинки
+      } else if (_newsType == 'poll') {
+        // Загружаем картинки для вариантов опроса
+        final optionsData = [];
+        for (final option in _pollOptions) {
+          if (option.textController.text.trim().isEmpty) continue;
+          
+          String? imagePath;
+          if (option.localImagePath != null) {
+            imagePath = await AdminService.uploadNewsImage(option.localImagePath!);
+          }
+          
+          optionsData.add({
+            'text': option.textController.text.trim(),
+            'image_path': imagePath,
+          });
+        }
+        
         extraData = {
-          'chips': chipsData,
+          'question': _pollQuestionController.text.trim(),
+          'options': optionsData,
         };
+      } else if (chipsData.isNotEmpty) {
+        extraData = {'chips': chipsData};
       }
-      
-      print('extraData: $extraData');
 
       await AdminService.createNews(
         eventType: _newsType,
@@ -107,7 +170,6 @@ class _CreateNewsPageState extends State<CreateNewsPage> {
         Navigator.pop(context);
       }
     } catch (e) {
-      print('❌ Ошибка: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('❌ Ошибка: $e')),
@@ -115,6 +177,8 @@ class _CreateNewsPageState extends State<CreateNewsPage> {
       }
     }
   }
+
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -160,39 +224,64 @@ class _CreateNewsPageState extends State<CreateNewsPage> {
               items: const [
                 DropdownMenuItem(value: 'admin_post', child: Text('Обычный пост')),
                 DropdownMenuItem(value: 'rumor', child: Text('Слухи')),
+                DropdownMenuItem(value: 'poll', child: Text('Опрос')),
               ],
               onChanged: (v) => setState(() => _newsType = v!),
             ),
             const SizedBox(height: 20),
 
             // Если слухи — картинки
-            const Text(
-              'Картинки вкусов (от 1 до 4-х)',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 8),
+            // const Text(
+            //   'Картинки вкусов (от 1 до 4-х)',
+            //   style: TextStyle(
+            //     fontWeight: FontWeight.bold,
+            //     fontSize: 16,
+            //   ),
+            // ),
+            // const SizedBox(height: 8),
 
             // 4 слота для картинок
-            Row(
-              children: List.generate(_maxChips, (index) {
-                final hasImage = index < _chips.length && _chips[index].localImagePath != null;
+            // Row(
+            //   children: List.generate(_maxChips, (index) {
+            //     final hasImage = index < _chips.length && _chips[index].localImagePath != null;
                 
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: _ImageSlot(
-                      imagePath: hasImage ? _chips[index].localImagePath : null,
-                      onTap: () => _pickImageForSlot(index),
-                      onRemove: hasImage ? () => _removeChipImage(index) : null,
+            //     return Expanded(
+            //       child: Padding(
+            //         padding: const EdgeInsets.symmetric(horizontal: 2),
+            //         child: _ImageSlot(
+            //           imagePath: hasImage ? _chips[index].localImagePath : null,
+            //           onTap: () => _pickImageForSlot(index),
+            //           onRemove: hasImage ? () => _removeChipImage(index) : null,
+            //         ),
+            //       ),
+            //     );
+            //   }),
+            // ),
+            // const SizedBox(height: 12),
+
+            if (_newsType != 'poll') ...[
+              const Text(
+                'Картинки (от 1 до 4-х)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: List.generate(_maxChips, (index) {
+                  final hasImage = index < _chips.length && _chips[index].localImagePath != null;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: _ImageSlot(
+                        imagePath: hasImage ? _chips[index].localImagePath : null,
+                        onTap: () => _pickImageForSlot(index),
+                        onRemove: hasImage ? () => _removeChipImage(index) : null,
+                      ),
                     ),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 12),
+                  );
+                }),
+              ),
+              const SizedBox(height: 12),
+            ],
 
               // Источник
             if (_newsType == 'rumor') ...[
@@ -235,6 +324,66 @@ class _CreateNewsPageState extends State<CreateNewsPage> {
               ),
               const SizedBox(height: 10),
             ],
+
+            if (_newsType == 'poll') ...[
+              // Вопрос
+              TextField(
+                controller: _pollQuestionController,
+                decoration: InputDecoration(
+                  labelText: 'Вопрос опроса',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Заголовок вариантов
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Варианты ответа',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  Text(
+                    '${_pollOptions.length}/$_maxPollOptions',
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Список вариантов
+              ..._pollOptions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final option = entry.value;
+                return _PollOptionInput(
+                  key: ValueKey(index),
+                  option: option,
+                  canRemove: _pollOptions.length > _minPollOptions,
+                  onRemove: () => _removePollOption(index),
+                );
+              }),
+
+              const SizedBox(height: 8),
+              
+              // Кнопка добавить вариант
+              if (_pollOptions.length < _maxPollOptions)
+                OutlinedButton.icon(
+                  onPressed: _addPollOption,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Добавить вариант'),
+                ),
+              const SizedBox(height: 12),
+            ],
+
 
             // Текст
             TextField(
@@ -362,108 +511,120 @@ class _RumorChip {
 
   _RumorChip({this.localImagePath});
 }
-// class _ChipInput extends StatefulWidget {
-//   final _RumorChip chip;
-//   final VoidCallback onRemove;
 
-//   const _ChipInput({
-//     super.key,
-//     required this.chip,
-//     required this.onRemove,
-//   });
 
-//   @override
-//   State<_ChipInput> createState() => _ChipInputState();
-// }
+class _PollOption {
+  final TextEditingController textController = TextEditingController();
+  String? localImagePath;
 
-// class _ChipInputState extends State<_ChipInput> {
-//   Future<void> _pickImage() async {
-//     final picker = ImagePicker();
-//     final image = await picker.pickImage(
-//       source: ImageSource.gallery,
-//       imageQuality: 80,
-//       maxWidth: 800,
-//       maxHeight: 800,
-//     );
+  _PollOption();
 
-//     if (image != null) {
-//       setState(() {
-//         widget.chip.localImagePath = image.path;
-//       });
-//     }
-//   }
+  void dispose() {
+    textController.dispose();
+  }
+}
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
+class _PollOptionInput extends StatefulWidget {
+  final _PollOption option;
+  final bool canRemove;
+  final VoidCallback onRemove;
 
-//     return Padding(
-//       padding: const EdgeInsets.only(bottom: 2),
-//       child: Row(
-//         children: [
-//           // Название
-//           Expanded(
-//             child: TextField(
-//               decoration: InputDecoration(
-//                 hintText: 'Название вкуса',
-//                 border: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(16),
-//                 ),
-//                 enabledBorder: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(16),
-//                   borderSide: BorderSide(
-//                     color: theme.colorScheme.outlineVariant,
-//                   ),
-//                 ),
-//                 focusedBorder: OutlineInputBorder(
-//                   borderRadius: BorderRadius.circular(16),
-//                   borderSide: BorderSide(
-//                     color: theme.colorScheme.primary,
-//                     width: 2,
-//                   ),
-//                 ),
-//               ),
-//               onChanged: (v) => widget.chip.name = v,
-//             ),
-//           ),
-//           const SizedBox(width: 4),
+  const _PollOptionInput({
+    super.key,
+    required this.option,
+    required this.canRemove,
+    required this.onRemove,
+  });
 
-//           // Кнопка выбора картинки
-//           GestureDetector(
-//             onTap: _pickImage,
-//             child: Container(
-//               width: 60,
-//               height: 60,
-//               decoration: BoxDecoration(
-//                 borderRadius: BorderRadius.circular(16),
-//                 border: Border.all(
-//                   color: theme.colorScheme.outlineVariant,
-//                 ),
-//               ),
-//               child: widget.chip.localImagePath != null
-//                   ? ClipRRect(
-//                       borderRadius: BorderRadius.circular(16),
-//                       child: Image.file(
-//                         File(widget.chip.localImagePath!),
-//                         width: 60,
-//                         height: 60,
-//                         fit: BoxFit.cover,
-//                       ),
-//                     )
-//                   : Icon(
-//                       Icons.image_outlined,
-//                       color: theme.colorScheme.onSurfaceVariant,
-//                     ),
-//             ),
-//           ),
+  @override
+  State<_PollOptionInput> createState() => _PollOptionInputState();
+}
 
-//           // Кнопка удаления
-//           IconButton(
-//             onPressed: widget.onRemove,
-//             icon: const Icon(Icons.close, color: Colors.red),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
+class _PollOptionInputState extends State<_PollOptionInput> {
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 800,
+      maxHeight: 800,
+    );
+
+    if (image != null) {
+      setState(() {
+        widget.option.localImagePath = image.path;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          // Картинка варианта
+          GestureDetector(
+            onTap: _pickImage,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: widget.option.localImagePath != null
+                      ? theme.colorScheme.primary.withOpacity(0.3)
+                      : theme.colorScheme.outlineVariant,
+                  width: 1.5,
+                ),
+              ),
+              child: widget.option.localImagePath != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(11),
+                      child: Image.file(
+                        File(widget.option.localImagePath!),
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Icon(
+                      Icons.add_photo_alternate_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      size: 24,
+                    ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Текст варианта
+          Expanded(
+            child: TextField(
+              controller: widget.option.textController,
+              decoration: InputDecoration(
+                hintText: 'Вариант ответа',
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                ),
+              ),
+            ),
+          ),
+
+          // Удалить
+          if (widget.canRemove)
+            IconButton(
+              onPressed: widget.onRemove,
+              icon: const Icon(Icons.close, color: Colors.red),
+            ),
+        ],
+      ),
+    );
+  }
+}

@@ -120,7 +120,18 @@ class _NewsPageState extends State<NewsPage> {
           ),
         ),
         itemBuilder: (context, index) {
-          return NewsCard(item: _news![index]);
+          return NewsCard(
+            item: _news![index],
+            onDeleted: _loadNews,
+            onVoted: (updatedItem) {
+              setState(() {
+                final idx = _news!.indexWhere((n) => n.id == updatedItem.id);
+                if (idx != -1) {
+                  _news![idx] = updatedItem;
+                }
+              });
+            },
+          );
         },
       ),
     );

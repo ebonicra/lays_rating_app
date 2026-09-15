@@ -1,3 +1,5 @@
+import 'package:lays_rating/models/poll.dart';
+
 class NewsItem {
   final int id;
   final String eventType;
@@ -11,6 +13,7 @@ class NewsItem {
   final int? likesCount;
   final int? dislikesCount;
   final bool? myReaction;
+  final PollData? poll;
 
   const NewsItem({
     required this.id,
@@ -25,6 +28,7 @@ class NewsItem {
     this.likesCount,
     this.dislikesCount,
     this.myReaction,
+    this.poll,
   });
 
   factory NewsItem.fromJson(Map<String, dynamic> json) {
@@ -43,6 +47,25 @@ class NewsItem {
       likesCount: json['likes_count'],
       dislikesCount: json['dislikes_count'],
       myReaction: json['my_reaction'],
+      poll: json['poll'] != null ? PollData.fromJson(json['poll']) : null,
+    );
+  }
+
+  NewsItem copyWith({PollData? poll}) {
+    return NewsItem(
+      id: id,
+      eventType: eventType,
+      text: text,
+      createdAt: createdAt,
+      user: user,
+      chip: chip,
+      userRating: userRating,
+      commentId: commentId,
+      likesCount: likesCount,
+      dislikesCount: dislikesCount,
+      myReaction: myReaction,
+      extraData: extraData,
+      poll: poll ?? this.poll,
     );
   }
 }

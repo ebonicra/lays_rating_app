@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lays_rating/models/news_item.dart';
+import 'package:lays_rating/models/poll.dart';
 import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/services/admin_service.dart';
+import 'package:lays_rating/services/news_service.dart';
 import 'package:lays_rating/services/user_service.dart';
 import 'package:lays_rating/pages/public_profile_page.dart';
 import 'package:lays_rating/pages/chips/chip_details_page.dart';
@@ -10,10 +12,14 @@ import 'package:lays_rating/services/comments_server.dart';
 
 class NewsCard extends StatefulWidget {
   final NewsItem item;
+  final VoidCallback? onDeleted;
+  final ValueChanged<NewsItem>? onVoted;
 
   const NewsCard({
     super.key,
     required this.item,
+    this.onDeleted,
+    this.onVoted,
   });
 
   @override
@@ -22,11 +28,11 @@ class NewsCard extends StatefulWidget {
 
 class _NewsCardState extends State<NewsCard> {
   bool _isExpanded = false;
-  bool _isLiked = false; // ← добавили
-  bool _isDisliked = false; // ← добавили
-  int _likesCount = 0; // ← добавили
-  int _dislikesCount = 0; // ← добавили
-  bool _isReactionLoading = false; // ← добавили
+  bool _isLiked = false;
+  bool _isDisliked = false;
+  int _likesCount = 0;
+  int _dislikesCount = 0;
+  bool _isReactionLoading = false;
   static const int _maxLines = 4;
 
   NewsItem get item => widget.item;
@@ -48,15 +54,12 @@ class _NewsCardState extends State<NewsCard> {
     return UserService.currentUser?.isAdmin ?? false;
   }
 
-
-
   Future<void> _handleLike() async {
     if (_isReactionLoading) return;
     setState(() => _isReactionLoading = true);
 
     try {
       if (_isLiked) {
-        // Убираем лайк
         await CommentsService.removeReaction(
           chipId: item.chip!.id,
           commentId: item.commentId!,
@@ -66,7 +69,6 @@ class _NewsCardState extends State<NewsCard> {
           _likesCount--;
         });
       } else {
-        // Ставим лайк
         await CommentsService.setReaction(
           chipId: item.chip!.id,
           commentId: item.commentId!,
@@ -88,14 +90,12 @@ class _NewsCardState extends State<NewsCard> {
     if (mounted) setState(() => _isReactionLoading = false);
   }
 
-  // Обновлённый _handleDislike:
   Future<void> _handleDislike() async {
     if (_isReactionLoading) return;
     setState(() => _isReactionLoading = true);
 
     try {
       if (_isDisliked) {
-        // Убираем дизлайк
         await CommentsService.removeReaction(
           chipId: item.chip!.id,
           commentId: item.commentId!,
@@ -105,7 +105,6 @@ class _NewsCardState extends State<NewsCard> {
           _dislikesCount--;
         });
       } else {
-        // Ставим дизлайк
         await CommentsService.setReaction(
           chipId: item.chip!.id,
           commentId: item.commentId!,
@@ -127,21 +126,48 @@ class _NewsCardState extends State<NewsCard> {
     if (mounted) setState(() => _isReactionLoading = false);
   }
 
+  Future<void> _handleVote(int optionIndex) async {
+    try {
+      await NewsService.vote(item.id, optionIndex);
+
+      if (mounted) {
+        final poll = item.poll!;
+        final updatedOptions = List<PollOption>.from(poll.options);
+        updatedOptions[optionIndex] = updatedOptions[optionIndex].copyWith(
+          votes: updatedOptions[optionIndex].votes + 1,
+        );
+
+        widget.onVoted?.call(
+          item.copyWith(
+            poll: poll.copyWith(
+              options: updatedOptions,
+              totalVotes: poll.totalVotes + 1,
+              myVote: optionIndex,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    // final bgColor = _getEventColor(theme);
-
     return Container(
-      // color: bgColor,
       padding: const EdgeInsets.all(16),
       child: Stack(
         children: [
-          // Контент
           _buildContent(context),
-          
-          // Кнопка удаления вверху справа
-          if (_isAdmin && (item.eventType == 'admin_post' || item.eventType == 'rumor'))
+
+          if (_isAdmin &&
+              (item.eventType == 'admin_post' ||
+                  item.eventType == 'rumor' ||
+                  item.eventType == 'poll'))
             Positioned(
               top: 0,
               right: 0,
@@ -160,12 +186,43 @@ class _NewsCardState extends State<NewsCard> {
   }
 
   Future<void> _deleteNews() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удалить новость?'),
+        content: const Text('Это действие нельзя отменить'),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Отмена'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Удалить'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     try {
       await AdminService.deleteNews(item.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('✅ Новость удалена')),
         );
+        widget.onDeleted?.call();
       }
     } catch (e) {
       if (mounted) {
@@ -173,25 +230,6 @@ class _NewsCardState extends State<NewsCard> {
           SnackBar(content: Text('❌ Ошибка: $e')),
         );
       }
-    }
-  }
-
-  Color _getEventColor(ThemeData theme) {
-    switch (item.eventType) {
-      case 'friend_comment':
-        return theme.colorScheme.primaryContainer.withOpacity(0.2);
-      case 'new_follower':
-        return theme.colorScheme.primaryContainer.withOpacity(0.2);
-      case 'new_chip':
-        return theme.colorScheme.primaryContainer.withOpacity(0.2);
-      case 'game_record':
-        return theme.colorScheme.primaryContainer.withOpacity(0.2);
-      case 'admin_post':
-        return theme.colorScheme.primaryContainer.withOpacity(0.2);
-      case 'rumor':
-        return theme.colorScheme.primaryContainer.withOpacity(0.2);
-      default:
-        return theme.colorScheme.surfaceContainerHighest;
     }
   }
 
@@ -209,11 +247,12 @@ class _NewsCardState extends State<NewsCard> {
         return _buildAdminPost(context);
       case 'rumor':
         return _buildRumor(context);
+      case 'poll':
+        return _buildPoll(context);
       default:
         return Text(item.text ?? '');
     }
   }
-
 
   Widget _buildFriendComment(BuildContext context) {
     final theme = Theme.of(context);
@@ -221,7 +260,6 @@ class _NewsCardState extends State<NewsCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Заголовок
         Row(
           children: [
             Icon(
@@ -232,20 +270,14 @@ class _NewsCardState extends State<NewsCard> {
             const SizedBox(width: 6),
             const Text(
               'Комментарий друга',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ],
         ),
         const SizedBox(height: 6),
-
-        // Основная часть
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Картинка чипсов слева
             if (item.chip != null)
               GestureDetector(
                 onTap: () {
@@ -263,28 +295,13 @@ class _NewsCardState extends State<NewsCard> {
                     width: 90,
                     height: 120,
                     fit: BoxFit.cover,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return Container(
-                        width: 90,
-                        height: 120,
-                        color: Colors.grey.shade200,
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      );
-                    },
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         width: 90,
                         height: 120,
                         color: Colors.grey.shade200,
                         child: const Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            color: Colors.grey,
-                            size: 30,
-                          ),
+                          child: Icon(Icons.broken_image, color: Colors.grey, size: 30),
                         ),
                       );
                     },
@@ -292,13 +309,10 @@ class _NewsCardState extends State<NewsCard> {
                 ),
               ),
             const SizedBox(width: 12),
-
-            // Правая часть
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Аватарка, username, дата, оценка
                   Row(
                     children: [
                       GestureDetector(
@@ -320,10 +334,7 @@ class _NewsCardState extends State<NewsCard> {
                           child: item.user?.avatarUrl == null
                               ? Text(
                                   item.user?.displayName.substring(0, 1).toUpperCase() ?? '?',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 10,
-                                  ),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
                                 )
                               : null,
                         ),
@@ -333,51 +344,25 @@ class _NewsCardState extends State<NewsCard> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            GestureDetector(
-                              onTap: () {
-                                if (item.user != null) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => PublicProfilePage(userId: item.user!.id),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Text(
-                                '@${item.user?.username ?? 'user'}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                            Text(
+                              '@${item.user?.username ?? 'user'}',
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 1),
                             Text(
                               _formatDate(item.createdAt),
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey.shade500,
-                              ),
+                              style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
                             ),
                           ],
                         ),
                       ),
-                      // Оценка справа вверху
                       if (item.userRating != null) ...[
                         const SizedBox(width: 6),
-                        RatingBadge(
-                          rating: item.userRating!,
-                          iconSize: 14,
-                          fontSize: 12,
-                        ),
+                        RatingBadge(rating: item.userRating!, iconSize: 14, fontSize: 12),
                       ],
                     ],
                   ),
                   const SizedBox(height: 6),
-
-                  // Комментарий
                   GestureDetector(
                     onTap: _isTextLong(item.text ?? '')
                         ? () => setState(() => _isExpanded = !_isExpanded)
@@ -386,15 +371,10 @@ class _NewsCardState extends State<NewsCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            minHeight: 52, // ← примерно 3 строки (13px * 1.3 * 3 ≈ 51px)
-                          ),
+                          constraints: const BoxConstraints(minHeight: 52),
                           child: Text(
                             item.text ?? '',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              height: 1.3,
-                              fontSize: 13,
-                            ),
+                            style: theme.textTheme.bodyMedium?.copyWith(height: 1.3, fontSize: 13),
                             maxLines: _isExpanded ? null : _maxLines,
                             overflow: _isExpanded ? null : TextOverflow.ellipsis,
                           ),
@@ -414,10 +394,7 @@ class _NewsCardState extends State<NewsCard> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
-                  // Реакции внизу справа
                   if (item.commentId != null)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -458,93 +435,44 @@ class _NewsCardState extends State<NewsCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Заголовок
         Row(
           children: [
-            Icon(
-              Icons.person_add_rounded,
-              size: 14,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.person_add_rounded, size: 14, color: theme.colorScheme.primary),
             const SizedBox(width: 6),
             const Text(
               'У вас новый подписчик!',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ],
         ),
-        const SizedBox(height: 4),
-
-        // Аватарка, username, дата
+        const SizedBox(height: 8),
         Row(
           children: [
-            // Аватарка
-            GestureDetector(
-              onTap: () {
-                if (item.user != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PublicProfilePage(userId: item.user!.id),
-                    ),
-                  );
-                }
-              },
-              child: CircleAvatar(
-                radius: 20,
-                backgroundImage: item.user?.avatarUrl != null
-                    ? NetworkImage('${AuthService.baseUrl}${item.user!.avatarUrl}')
-                    : null,
-                child: item.user?.avatarUrl == null
-                    ? Text(
-                        item.user?.displayName.substring(0, 1).toUpperCase() ?? '?',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      )
-                    : null,
-              ),
+            CircleAvatar(
+              radius: 20,
+              backgroundImage: item.user?.avatarUrl != null
+                  ? NetworkImage('${AuthService.baseUrl}${item.user!.avatarUrl}')
+                  : null,
+              child: item.user?.avatarUrl == null
+                  ? Text(
+                      item.user?.displayName.substring(0, 1).toUpperCase() ?? '?',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    )
+                  : null,
             ),
             const SizedBox(width: 12),
-
-            // Username и дата
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Username — кликабельный
-                  GestureDetector(
-                    onTap: () {
-                      if (item.user != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PublicProfilePage(userId: item.user!.id),
-                          ),
-                        );
-                      }
-                    },
-                    child: Text(
-                      '@${item.user?.username ?? 'user'}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  Text(
+                    '@${item.user?.username ?? 'user'}',
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   const SizedBox(height: 2),
-                  // Дата
                   Text(
                     _formatDate(item.createdAt),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey.shade500,
-                    ),
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
                   ),
                 ],
               ),
@@ -557,10 +485,7 @@ class _NewsCardState extends State<NewsCard> {
 
   bool _isTextLong(String text) {
     final textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: const TextStyle(fontSize: 13, height: 1.3),
-      ),
+      text: TextSpan(text: text, style: const TextStyle(fontSize: 13, height: 1.3)),
       maxLines: _maxLines,
       textDirection: TextDirection.ltr,
     );
@@ -590,35 +515,23 @@ class _NewsCardState extends State<NewsCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Заголовок
         Row(
           children: [
-            Icon(
-              Icons.auto_awesome_rounded,
-              size: 14,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.auto_awesome_rounded, size: 14, color: theme.colorScheme.primary),
             const SizedBox(width: 6),
             const Text(
               'Появился новый вкус!',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ],
         ),
-        const SizedBox(height: 4),
-
-        // Большая картинка по центру
+        const SizedBox(height: 8),
         if (item.chip != null)
           GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => ChipDetailsPage(chipId: item.chip!.id),
-                ),
+                MaterialPageRoute(builder: (_) => ChipDetailsPage(chipId: item.chip!.id)),
               );
             },
             child: ClipRRect(
@@ -628,26 +541,12 @@ class _NewsCardState extends State<NewsCard> {
                 width: double.infinity,
                 height: 230,
                 fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    height: 200,
-                    color: Colors.grey.shade200,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                },
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     height: 200,
                     color: Colors.grey.shade200,
                     child: const Center(
-                      child: Icon(
-                        Icons.broken_image,
-                        color: Colors.grey,
-                        size: 40,
-                      ),
+                      child: Icon(Icons.broken_image, color: Colors.grey, size: 40),
                     ),
                   );
                 },
@@ -655,29 +554,19 @@ class _NewsCardState extends State<NewsCard> {
             ),
           ),
         const SizedBox(height: 8),
-
-        // Название жирным
         if (item.chip != null)
           Center(
             child: Text(
               item.chip!.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               textAlign: TextAlign.center,
             ),
           ),
         const SizedBox(height: 2),
-
-        // Подпись "оцените"
         Center(
           child: Text(
             'Оцените новый вкус! 😋',
-            style: TextStyle(
-              fontSize: 13,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
       ],
@@ -692,45 +581,35 @@ class _NewsCardState extends State<NewsCard> {
         ? 180.0
         : chips.length == 2
             ? 140.0
-            : 90.0;
+            : chips.length == 3
+                ? 110.0
+                : 85.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Заголовок
         Row(
           children: [
-            Icon(
-              Icons.psychology_rounded,
-              size: 14,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.psychology_rounded, size: 14, color: theme.colorScheme.primary),
             const SizedBox(width: 6),
             const Text(
               'Ходят слухи...',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ],
         ),
         const SizedBox(height: 12),
-
-        // Картинки по центру
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: chips.asMap().entries.map((entry) {
-            final index = entry.key; // ← индекс картинки
-            final chip = entry.value;
-            final imagePath = chip['image_path'];
-            
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: GestureDetector(
-                onTap: () {
-                  // Открываем полноэкранный просмотр с листанием
-                  Navigator.push(
+        if (chips.isNotEmpty)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: chips.asMap().entries.map((entry) {
+              final index = entry.key;
+              final chip = entry.value;
+              final imagePath = chip['image_path'];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: GestureDetector(
+                  onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => _FullScreenImageViewer(
@@ -738,75 +617,47 @@ class _NewsCardState extends State<NewsCard> {
                         initialIndex: index,
                       ),
                     ),
-                  );
-                },
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: imagePath != null
-                      ? Image.network(
-                          '${AuthService.baseUrl}/news/images/$imagePath',
-                          width: imageSize,
-                          height: imageSize,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: imageSize,
-                              height: imageSize,
-                              color: Colors.grey.shade200,
-                              child: const Icon(
-                                Icons.broken_image,
-                                color: Colors.grey,
-                                size: 32,
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      '${AuthService.baseUrl}/news/images/$imagePath',
+                      width: imageSize,
+                      height: imageSize,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
                           width: imageSize,
                           height: imageSize,
                           color: Colors.grey.shade200,
-                          child: const Icon(
-                            Icons.image_outlined,
-                            color: Colors.grey,
-                          ),
-                        ),
+                          child: const Icon(Icons.broken_image, color: Colors.grey, size: 32),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
-            );
-          }).toList(),
-        ),
+              );
+            }).toList(),
+          ),
         const SizedBox(height: 12),
-
-        // Текст новости
         if (item.text != null && item.text!.isNotEmpty) ...[
           Center(
             child: Text(
               item.text!,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.3,
-                fontSize: 16,
-              ),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.3, fontSize: 16),
             ),
           ),
           const SizedBox(height: 8),
         ],
-
-        // Источник
         if (source.isNotEmpty)
           Row(
             children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 14,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              Icon(Icons.info_outline_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 4),
               Text(
                 source,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -823,32 +674,22 @@ class _NewsCardState extends State<NewsCard> {
             ? 140.0
             : chips.length == 3
                 ? 90.0
-                : 70.0; // 4 фото
+                : 70.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Заголовок
         Row(
           children: [
-            Icon(
-              Icons.campaign_rounded,
-              size: 14,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.campaign_rounded, size: 14, color: theme.colorScheme.primary),
             const SizedBox(width: 6),
             const Text(
               'От админа',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ],
         ),
         const SizedBox(height: 12),
-
-        // Картинки (если есть)
         if (chips.isNotEmpty) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -891,21 +732,197 @@ class _NewsCardState extends State<NewsCard> {
           ),
           const SizedBox(height: 12),
         ],
+        if (item.text != null && item.text!.isNotEmpty)
+          Center(
+            child: Text(
+              item.text!,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.3, fontSize: 16),
+            ),
+          ),
+      ],
+    );
+  }
 
-        // Текст
-      if (item.text != null && item.text!.isNotEmpty)
+  Widget _buildPoll(BuildContext context) {
+    final theme = Theme.of(context);
+    final poll = item.poll;
+
+    if (poll == null) return const SizedBox.shrink();
+
+    final hasVoted = poll.myVote != null;
+    
+    // Размер картинок в зависимости от количества
+    final imageSize = poll.options.length == 1
+        ? 180.0
+        : poll.options.length == 2
+            ? 140.0
+            : poll.options.length == 3
+                ? 110.0
+                : 85.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Заголовок
+        Row(
+          children: [
+            Icon(Icons.poll_rounded, size: 14, color: theme.colorScheme.primary),
+            const SizedBox(width: 6),
+            const Text(
+              'Опрос',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Вопрос по центру
         Center(
           child: Text(
-            item.text!,
-            textAlign: TextAlign.center, // ← центрирование строк
-            style: theme.textTheme.bodyMedium?.copyWith(
-              height: 1.3,
-              fontSize: 16,
+            poll.question,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
           ),
         ),
+        const SizedBox(height: 12),
+
+        // Картинки по центру (если есть)
+        if (poll.options.any((o) => o.imagePath != null))
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: poll.options.asMap().entries.map((entry) {
+              final option = entry.value;
+              if (option.imagePath == null) return const SizedBox.shrink();
+              
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    '${AuthService.baseUrl}/news/images/${option.imagePath}',
+                    width: imageSize,
+                    height: imageSize,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: imageSize,
+                        height: imageSize,
+                        color: Colors.grey.shade200,
+                        child: const Icon(Icons.broken_image, color: Colors.grey),
+                      );
+                    },
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        if (poll.options.any((o) => o.imagePath != null))
+          const SizedBox(height: 12),
+
+        // Варианты ответов
+        ...poll.options.asMap().entries.map((entry) {
+          final index = entry.key;
+          final option = entry.value;
+          return _PollOptionTile(
+            option: option,
+            index: index,
+            totalVotes: poll.totalVotes,
+            isMyVote: poll.myVote == index,
+            hasVoted: hasVoted,
+            onTap: hasVoted ? null : () => _handleVote(index),
+          );
+        }),
+
+        // Описание опроса
+        if (item.text != null && item.text!.isNotEmpty)
+          Center(
+            child: Text(
+              item.text!,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.3, fontSize: 16),
+            ),
+          ),
+        const SizedBox(height: 10),
+
+        // Общее количество голосов
+        Row(
+          children: [
+            Text(
+              '${poll.totalVotes} ${_pluralizeVotes(poll.totalVotes)}',
+              style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+            ),
+            
+            const Spacer(),
+            
+            // Кнопка отмены голоса
+            if (hasVoted)
+              TextButton.icon(
+                onPressed: _removeVote,
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 16,
+                  color: theme.colorScheme.error,
+                ),
+                label: Text(
+                  'Отменить голос',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+          ],
+        ),
       ],
     );
+  }
+
+  Future<void> _removeVote() async {
+    try {
+      await NewsService.removeVote(item.id);
+      
+      if (mounted) {
+        final poll = item.poll!;
+        final updatedOptions = List<PollOption>.from(poll.options);
+        
+        if (poll.myVote != null) {
+          updatedOptions[poll.myVote!] = updatedOptions[poll.myVote!].copyWith(
+            votes: updatedOptions[poll.myVote!].votes - 1,
+          );
+        }
+        
+        final updatedItem = item.copyWith(
+          poll: poll.copyWith(
+            options: updatedOptions,
+            totalVotes: poll.totalVotes - 1,
+            clearMyVote: true, // ← сбрасываем
+          ),
+        );
+        
+        print('Отмена: myVote = ${updatedItem.poll?.myVote}'); // ← отладка
+        
+        widget.onVoted?.call(updatedItem);
+      }
+    } catch (e) {
+      // ...
+    }
+  }
+
+  String _pluralizeVotes(int count) {
+    if (count % 10 == 1 && count % 100 != 11) return 'голос';
+    if ([2, 3, 4].contains(count % 10) && ![12, 13, 14].contains(count % 100)) {
+      return 'голоса';
+    }
+    return 'голосов';
   }
 
   String _formatDate(DateTime date) {
@@ -920,9 +937,8 @@ class _NewsCardState extends State<NewsCard> {
   }
 }
 
+// ===== ВСПОМОГАТЕЛЬНЫЕ ВИДЖЕТЫ =====
 
-
-/// Кнопка лайка/дизлайка
 class _ReactionButton extends StatelessWidget {
   final IconData icon;
   final IconData activeIcon;
@@ -1029,16 +1045,111 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
               height: double.infinity,
               errorBuilder: (context, error, stackTrace) {
                 return const Center(
-                  child: Icon(
-                    Icons.broken_image,
-                    color: Colors.white,
-                    size: 48,
-                  ),
+                  child: Icon(Icons.broken_image, color: Colors.white, size: 48),
                 );
               },
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _PollOptionTile extends StatelessWidget {
+  final PollOption option;
+  final int index;
+  final int totalVotes;
+  final bool isMyVote;
+  final bool hasVoted;
+  final VoidCallback? onTap;
+
+  const _PollOptionTile({
+    required this.option,
+    required this.index,
+    required this.totalVotes,
+    required this.isMyVote,
+    required this.hasVoted,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final percent = totalVotes > 0 ? (option.votes / totalVotes * 100).round() : 0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isMyVote
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outlineVariant.withOpacity(0.3),
+              width: isMyVote ? 2 : 1,
+            ),
+            color: isMyVote
+                ? theme.colorScheme.primaryContainer.withOpacity(0.3)
+                : Colors.transparent,
+          ),
+          child: Stack(
+            children: [
+              if (hasVoted)
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(11),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: percent / 100,
+                        child: Container(
+                          color: theme.colorScheme.primary.withOpacity(0.15),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        option.text,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: isMyVote ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    if (hasVoted) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '$percent%',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isMyVote ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                    if (isMyVote) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
