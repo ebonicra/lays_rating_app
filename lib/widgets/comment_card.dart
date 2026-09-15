@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lays_rating/models/chip_comment.dart';
-import '../services/comments_server.dart';
+import '../services/comments_service.dart';
 import '../services/auth_service.dart';
 import 'package:lays_rating/services/user_service.dart';
 import '../pages/public_profile_page.dart';
@@ -42,7 +42,6 @@ class _CommentCardState extends State<CommentCard> {
   }
 
 
-  // Обработка лайка
   Future<void> _handleLike() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
@@ -51,8 +50,7 @@ class _CommentCardState extends State<CommentCard> {
       if (_comment.userReaction?.isLiked == true) {
         // Уже лайкнуто — убираем реакцию
         await CommentsService.removeReaction(
-          chipId: widget.chipId,
-          commentId: _comment.id,
+          commentId: _comment.id,  // ← убрали chipId
         );
         _comment = _comment.copyWith(
           likesCount: _comment.likesCount - 1,
@@ -61,14 +59,11 @@ class _CommentCardState extends State<CommentCard> {
       } else {
         // Ставим лайк (или меняем дизлайк на лайк)
         await CommentsService.setReaction(
-          chipId: widget.chipId,
-          commentId: _comment.id,
+          commentId: _comment.id,  // ← убрали chipId
           isLike: true,
         );
         _comment = _comment.copyWith(
-          likesCount: _comment.userReaction?.isLiked == false
-              ? _comment.likesCount + 1
-              : _comment.likesCount + 1,
+          likesCount: _comment.likesCount + 1,
           dislikesCount: _comment.userReaction?.isLiked == false
               ? _comment.dislikesCount - 1
               : _comment.dislikesCount,
@@ -87,7 +82,6 @@ class _CommentCardState extends State<CommentCard> {
   }
 
 
-  // Обработка дизлайка
   Future<void> _handleDislike() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
@@ -96,8 +90,7 @@ class _CommentCardState extends State<CommentCard> {
       if (_comment.userReaction?.isLiked == false) {
         // Уже дизлайкнуто — убираем реакцию
         await CommentsService.removeReaction(
-          chipId: widget.chipId,
-          commentId: _comment.id,
+          commentId: _comment.id,  // ← убрали chipId
         );
         _comment = _comment.copyWith(
           dislikesCount: _comment.dislikesCount - 1,
@@ -106,14 +99,11 @@ class _CommentCardState extends State<CommentCard> {
       } else {
         // Ставим дизлайк (или меняем лайк на дизлайк)
         await CommentsService.setReaction(
-          chipId: widget.chipId,
-          commentId: _comment.id,
+          commentId: _comment.id,  // ← убрали chipId
           isLike: false,
         );
         _comment = _comment.copyWith(
-          dislikesCount: _comment.userReaction?.isLiked == true
-              ? _comment.dislikesCount + 1
-              : _comment.dislikesCount + 1,
+          dislikesCount: _comment.dislikesCount + 1,
           likesCount: _comment.userReaction?.isLiked == true
               ? _comment.likesCount - 1
               : _comment.likesCount,
@@ -194,8 +184,7 @@ class _CommentCardState extends State<CommentCard> {
                   if (controller.text.trim().isNotEmpty) {
                     try {
                       final updated = await CommentsService.updateComment(
-                        chipId: widget.chipId,
-                        commentId: _comment.id,
+                        commentId: _comment.id,  // ← убрали chipId
                         text: controller.text.trim(),
                       );
                       setState(() => _comment = updated);
@@ -247,8 +236,7 @@ class _CommentCardState extends State<CommentCard> {
                   onPressed: () async {
                     try {
                       await CommentsService.deleteComment(
-                        chipId: widget.chipId,
-                        commentId: _comment.id,
+                        commentId: _comment.id,  // ← убрали chipId
                       );
                       if (mounted) {
                         Navigator.pop(context);

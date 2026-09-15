@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lays_rating/models/user.dart';
+import 'package:lays_rating/models/follow_user.dart';
 import 'package:lays_rating/services/follow_service.dart';
 import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/pages/public_profile_page.dart';
 
 class UserCard extends StatefulWidget {
-  final User user;
+  final FollowUser user;
 
   const UserCard({
     super.key,

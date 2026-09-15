@@ -89,9 +89,8 @@ class AppThemes {
       onSecondary: Colors.white,
       surface: Colors.white,
       onSurface: Colors.black,
-      // inversePrimary: Color.fromARGB(255, 73, 72, 72),
     ).copyWith(
-      inversePrimary: Colors.grey.shade700, // ← вот так работает!
+      inversePrimary: Colors.grey.shade700,
     ),
     scaffoldBackgroundColor: Colors.white,
     appBarTheme: const AppBarTheme(
@@ -111,7 +110,7 @@ class AppThemes {
   static final blackDark = ThemeData(
     brightness: Brightness.dark,
     colorScheme: const ColorScheme.dark(
-      primary: Colors.white, // ← в тёмной теме акцент белый
+      primary: Colors.white,
       onPrimary: Colors.black,
       primaryContainer: Color(0xFF2C2C2C),
       onPrimaryContainer: Colors.white,
@@ -119,9 +118,8 @@ class AppThemes {
       onSecondary: Colors.black,
       surface: AppColors.darkSurface,
       onSurface: Colors.white,
-      // inversePrimary: Color.fromARGB(255, 73, 72, 72),
     ).copyWith(
-      inversePrimary: Colors.grey.shade700, // ← вот так работает!
+      inversePrimary: Colors.grey.shade700,
     ),
     scaffoldBackgroundColor: AppColors.darkBackground,
     appBarTheme: const AppBarTheme(
@@ -131,6 +129,7 @@ class AppThemes {
       elevation: 0,
     ),
   );
+
   // ----- ДЕФОЛТНЫЕ (для fallback) -----
   static final light = pinkLight;
   static final dark = pinkDark;

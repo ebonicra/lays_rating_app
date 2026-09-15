@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/chip_service.dart';
-import '../../services/preference_service.dart';
+import '../../services/filter_service.dart';
 import '../../widgets/chip_card.dart';
 import '../../models/chip.dart';
 
@@ -38,7 +38,7 @@ class _ChipsPageState extends State<ChipsPage> {
     setState(() => isLoading = true);
 
     try {
-      final filters = await PreferenceService.getPreferences();
+      final filters = await FilterService.getFilters();
       final result = await ChipService.fetchChips(
         categories: filters.categories,
       );

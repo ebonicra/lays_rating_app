@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/chip_category.dart';
 import '../../widgets/filter_card.dart';
-import '../../services/preference_service.dart';
+import '../services/filter_service.dart';
 
 
 class FilterPage extends StatefulWidget {
@@ -28,7 +28,7 @@ class _FilterPageState extends State<FilterPage> {
 
   Future<void> loadPreferences() async {
     try {
-      final filters = await PreferenceService.getPreferences();
+      final filters = await FilterService.getFilters();
       setState(() {
         selectedCategories
           ..clear()
@@ -73,7 +73,7 @@ class _FilterPageState extends State<FilterPage> {
     });
 
     try {
-      await PreferenceService.updatePreferences(
+      await FilterService.updateFilters(
         categories: selectedCategories.toList(),
         russiaOnly: _russiaOnly,
         availableOnly: _availableOnly,
@@ -187,7 +187,7 @@ Future<void> toggleRussiaOnly() async {
   setState(() => _russiaOnly = !_russiaOnly);
 
   try {
-    await PreferenceService.updatePreferences(
+    await FilterService.updateFilters(
       russiaOnly: _russiaOnly,
     );
   } catch (e) {
@@ -205,7 +205,7 @@ Future<void> toggleRussiaOnly() async {
     setState(() => _availableOnly = !_availableOnly);
 
     try {
-      await PreferenceService.updatePreferences(
+      await FilterService.updateFilters(
         availableOnly: _availableOnly,
       );
     } catch (e) {

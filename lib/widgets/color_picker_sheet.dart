@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../app/colors.dart';
+import '../theme/colors.dart';
 
 class ColorWheelDialog extends StatefulWidget {
   final String currentColor;

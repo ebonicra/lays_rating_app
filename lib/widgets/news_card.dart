@@ -8,7 +8,7 @@ import 'package:lays_rating/services/user_service.dart';
 import 'package:lays_rating/pages/public_profile_page.dart';
 import 'package:lays_rating/pages/chips/chip_details_page.dart';
 import 'package:lays_rating/widgets/rating_badge.dart';
-import 'package:lays_rating/services/comments_server.dart';
+import 'package:lays_rating/services/comments_service.dart';
 
 class NewsCard extends StatefulWidget {
   final NewsItem item;
@@ -61,8 +61,7 @@ class _NewsCardState extends State<NewsCard> {
     try {
       if (_isLiked) {
         await CommentsService.removeReaction(
-          chipId: item.chip!.id,
-          commentId: item.commentId!,
+          commentId: item.commentId!,  // ← убрали chipId
         );
         setState(() {
           _isLiked = false;
@@ -70,8 +69,7 @@ class _NewsCardState extends State<NewsCard> {
         });
       } else {
         await CommentsService.setReaction(
-          chipId: item.chip!.id,
-          commentId: item.commentId!,
+          commentId: item.commentId!,  // ← убрали chipId
           isLike: true,
         );
         setState(() {
@@ -97,8 +95,7 @@ class _NewsCardState extends State<NewsCard> {
     try {
       if (_isDisliked) {
         await CommentsService.removeReaction(
-          chipId: item.chip!.id,
-          commentId: item.commentId!,
+          commentId: item.commentId!,  // ← убрали chipId
         );
         setState(() {
           _isDisliked = false;
@@ -106,8 +103,7 @@ class _NewsCardState extends State<NewsCard> {
         });
       } else {
         await CommentsService.setReaction(
-          chipId: item.chip!.id,
-          commentId: item.commentId!,
+          commentId: item.commentId!,  // ← убрали chipId
           isLike: false,
         );
         setState(() {

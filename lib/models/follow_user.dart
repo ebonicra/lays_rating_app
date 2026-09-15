@@ -1,3 +1,5 @@
+import 'package:lays_rating/models/user.dart';
+
 class FollowUser {
   final int id;
   final String username;
@@ -22,6 +24,16 @@ class FollowUser {
       averageRating: json['average_rating'] != null
           ? (json['average_rating'] as num).toDouble()
           : null,
+    );
+  }
+
+  factory FollowUser.fromUser(User user, {double? averageRating}) {
+    return FollowUser(
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      averageRating: averageRating,
     );
   }
 }

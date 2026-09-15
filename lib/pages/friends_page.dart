@@ -1,6 +1,7 @@
 // pages/friends_page.dart
 import 'package:flutter/material.dart';
 import 'package:lays_rating/models/user.dart';
+import 'package:lays_rating/models/follow_user.dart';
 import 'package:lays_rating/services/follow_service.dart';
 import '../services/auth_service.dart';
 import '../pages/user_search_page.dart';
@@ -22,8 +23,8 @@ class FriendsPage extends StatefulWidget {
 }
 
 class _FriendsPageState extends State<FriendsPage> {
-  late Future<List<User>> _followingFuture;  // ← не хватало
-  late Future<List<User>> _followersFuture;  // ← не хватало
+  late Future<List<FollowUser>> _followingFuture;
+  late Future<List<FollowUser>> _followersFuture;
 
 
   @override
@@ -118,7 +119,7 @@ class _FriendsPageState extends State<FriendsPage> {
 }
 
 class _UsersList extends StatelessWidget {
-  final Future<List<User>> future;
+  final Future<List<FollowUser>> future;
   final String emptyText;
 
   const _UsersList({
@@ -128,7 +129,7 @@ class _UsersList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<User>>(
+    return FutureBuilder<List<FollowUser>>(
       future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

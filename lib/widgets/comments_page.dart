@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lays_rating/models/chip_comment.dart';
-import 'package:lays_rating/services/comments_server.dart';
+import 'package:lays_rating/services/comments_service.dart';
 import 'package:lays_rating/widgets/comment_card.dart';
 
 class CommentsPage extends StatefulWidget {

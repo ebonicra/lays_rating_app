@@ -1,9 +1,10 @@
-// services/admin_service.dart
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:lays_rating/models/user.dart';
 
+import 'package:http/http.dart' as http;
+
+import '../models/user.dart';
 import 'auth_service.dart';
+
 
 class AdminService {
   static Future<String> uploadNewsImage(String filePath) async {
@@ -17,15 +18,15 @@ class AdminService {
 
     final response = await request.send();
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(await response.stream.bytesToString());
-      return data['image_path'];
-    } else {
+    if (response.statusCode != 200) {
       throw Exception('Не удалось загрузить картинку');
     }
+
+    final data = jsonDecode(await response.stream.bytesToString());
+    return data['image_path'];
   }
 
-  static Future<void> createNews({
+  static Future<int> createNews({
     required String eventType,
     String? text,
     Map<String, dynamic>? extraData,
@@ -49,8 +50,16 @@ class AdminService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Не удалось создать новость');
+      try {
+        final data = jsonDecode(response.body);
+        throw Exception(data['detail'] ?? 'Не удалось создать новость');
+      } catch (_) {
+        throw Exception('Не удалось создать новость');
+      }
     }
+
+    final data = jsonDecode(response.body);
+    return data['id'];
   }
 
   static Future<void> deleteNews(int newsId) async {
@@ -77,12 +86,12 @@ class AdminService {
       headers: {'Authorization': 'Bearer $token'},
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
-      return data.map((u) => User.fromJson(u)).toList();
-    } else {
+    if (response.statusCode != 200) {
       throw Exception('Не удалось загрузить админов');
     }
+
+    final data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
+    return data.map((u) => User.fromJson(u)).toList();
   }
 
   static Future<void> makeAdmin(int userId) async {
@@ -98,7 +107,12 @@ class AdminService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Не удалось назначить админа');
+      try {
+        final data = jsonDecode(response.body);
+        throw Exception(data['detail'] ?? 'Не удалось назначить админа');
+      } catch (_) {
+        throw Exception('Не удалось назначить админа');
+      }
     }
   }
 
@@ -112,7 +126,12 @@ class AdminService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Не удалось снять админа');
+      try {
+        final data = jsonDecode(response.body);
+        throw Exception(data['detail'] ?? 'Не удалось снять админа');
+      } catch (_) {
+        throw Exception('Не удалось снять админа');
+      }
     }
   }
 }

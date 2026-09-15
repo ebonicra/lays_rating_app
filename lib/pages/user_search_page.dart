@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lays_rating/models/user.dart';
 import 'package:lays_rating/services/follow_service.dart';
+import 'package:lays_rating/models/follow_user.dart';
 import 'package:lays_rating/services/auth_service.dart';
 
 import 'package:lays_rating/widgets/user_card.dart';
@@ -118,7 +119,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
       itemCount: _filteredUsers!.length,
       itemBuilder: (context, index) {
         final user = _filteredUsers![index];
-        return UserCard(user: user);
+        return UserCard(user: FollowUser.fromUser(user));
       },
     );
   }

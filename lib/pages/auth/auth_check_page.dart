@@ -1,55 +1,47 @@
 import 'package:flutter/material.dart';
 
-import '../../services/auth_service.dart';
-import '../main_page.dart';
-import 'login_page.dart';
+import 'package:lays_rating/services/auth_service.dart';
+import 'package:lays_rating/pages/main_page.dart';
+import 'package:lays_rating/pages/auth/login_page.dart';
 
 
 class AuthCheckPage extends StatefulWidget {
-  const AuthCheckPage({
-    super.key,
-  });
+  const AuthCheckPage({super.key});
 
   @override
-  State<AuthCheckPage> createState() =>
-      _AuthCheckPageState();
+  State<AuthCheckPage> createState() => _AuthCheckPageState();
 }
 
 
 class _AuthCheckPageState extends State<AuthCheckPage> {
-
   @override
   void initState() {
     super.initState();
-    checkAuth();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAuth());
   }
 
-  Future<void> checkAuth() async {
-    final token = await AuthService.getToken();
-    if (!mounted) return;
-    if (token != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const MainPage(),
-        ),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const LoginPage(),
-        ),
-      );
+  Future<void> _checkAuth() async {
+    Widget nextPage;
+    try {
+      final token = await AuthService.getToken();
+      nextPage = token != null ? const MainPage() : const LoginPage();
+    } catch (e) {
+      debugPrint('AuthCheckPage._checkAuth error: $e');
+      nextPage = const LoginPage();
     }
-  }
 
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => nextPage),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator()
       ),
     );
   }

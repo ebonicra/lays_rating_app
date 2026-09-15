@@ -15,10 +15,10 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  static const int chipsIndex = 2;
-  int currentIndex = chipsIndex;
+  static const int _chipsIndex = 2;
+  int _currentIndex = _chipsIndex;
 
-  static const List<Widget> pages = [
+  static const List<Widget> _pages = [
     GamePage(),
     NewsPage(),
     ChipsPage(),
@@ -26,71 +26,63 @@ class _MainPageState extends State<MainPage> {
     ProfilePage(),
   ];
 
-  void openChipsPage() {
-    setState(() {
-      currentIndex = chipsIndex;
-    });
+  void _openChipsPage() {
+    setState(() => _currentIndex = _chipsIndex);
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      body: pages[currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
 
       floatingActionButton: Transform.translate(
-        offset: const Offset(0, 15), // ← вниз
+        offset: const Offset(0, 15),
         child: SizedBox(
           width: 75,
           height: 75,
           child: FloatingActionButton(
-            onPressed: openChipsPage,
+            onPressed: _openChipsPage,
             shape: const CircleBorder(),
             child: const Icon(Icons.local_fire_department),
           ),
         ),
       ),
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        iconSize: 20.0,
-        onTap: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
-
+        currentIndex: _currentIndex,
+        iconSize: 20,
         type: BottomNavigationBarType.fixed,
-
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+        },
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.sports_esports),
-            label: "Игра",
+            label: 'Игра',
           ),
-
           BottomNavigationBarItem(
             icon: Icon(Icons.newspaper),
-            label: "Новости",
+            label: 'Новости',
           ),
-
           BottomNavigationBarItem(
-            icon: SizedBox.shrink(),
-            label: "",
+            icon: SizedBox(width: 48),
+            label: '',
           ),
-
           BottomNavigationBarItem(
             icon: Icon(Icons.tune),
-            label: "Фильтры",
+            label: 'Фильтры',
           ),
-
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: "Профиль",
+            label: 'Профиль',
           ),
         ],
       ),
-
     );
   }
 }

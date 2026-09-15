@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lays_rating/models/follow_user.dart';
+import 'package:lays_rating/services/follow_service.dart';
 import 'package:lays_rating/services/stats_service.dart';
 import 'package:lays_rating/services/auth_service.dart';
+
 import 'package:lays_rating/pages/public_profile_page.dart';
 
 class FollowsDetailSheet extends StatelessWidget {
@@ -84,9 +86,9 @@ class FollowsDetailSheet extends StatelessWidget {
   Future<List<FollowUser>> _fetchUsers() {
     switch (type) {
       case FollowsSheetType.following:
-        return StatsService.getFollowing(userId);
+        return FollowService.getFollowing(userId: userId);
       case FollowsSheetType.followers:
-        return StatsService.getFollowers(userId);
+        return FollowService.getFollowers(userId: userId);
       case FollowsSheetType.friendsAverageRating:
         return StatsService.getFriendsAverageRating(userId);
     }

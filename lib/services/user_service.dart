@@ -1,40 +1,28 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 
 import '../models/user.dart';
-import '../models/user_stats.dart';
-import '../models/stat_chip.dart';
 import 'auth_service.dart';
 
 
 class UserService {
   static User? currentUser;
+
   static Future<User> getCurrentUser() async {
     final token = await AuthService.getToken();
-    if (token == null) {
-      throw Exception("No token");
-    }
+    if (token == null) throw Exception("No token");
 
     final response = await http.get(
-      Uri.parse(
-        "${AuthService.baseUrl}/users/me",
-      ),
-      headers: {
-        "Authorization": "Bearer $token",
-      },
+      Uri.parse("${AuthService.baseUrl}/users/me"),
+      headers: {"Authorization": "Bearer $token"},
     );
 
     if (response.statusCode != 200) {
-      throw Exception(
-        "Failed to load user",
-      );
+      throw Exception("Failed to load user");
     }
 
-    final user = User.fromJson(
-      jsonDecode(response.body),
-    );
-    
-    // final user = User.fromJson(jsonDecode(response.body));
+    final user = User.fromJson(jsonDecode(response.body));
     currentUser = user;
     return user;
   }
@@ -51,11 +39,9 @@ class UserService {
     if (response.statusCode != 200) {
       throw Exception("Failed to load user");
     }
-
     return User.fromJson(jsonDecode(response.body));
   }
 
- 
   static Future<User> updateProfile({
     String? displayName,
     String? username,
@@ -77,14 +63,16 @@ class UserService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception("Failed to update profile");
+      try {
+        final data = jsonDecode(response.body);
+        throw Exception(data["detail"] ?? "Failed to update profile");
+      } catch (_) {
+        throw Exception("Failed to update profile");
+      }
     }
 
     final user = User.fromJson(jsonDecode(response.body));
     currentUser = user;
     return user;
   }
-
-
-
 }

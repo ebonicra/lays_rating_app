@@ -1,23 +1,22 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 
 class AuthService {
-  // static const String baseUrl = "http://10.0.2.2:8000";
   static const String baseUrl = "http://192.168.0.104:8000";
-  // static const String baseUrl = "http://10.57.248.41:8000";
 
+  // Регистрация
   static Future<User> register({
     required String username,
     required String password,
     required String displayName,
   }) async {
-
     final response = await http.post(
-      Uri.parse("$baseUrl/users/register"),
+      Uri.parse("$baseUrl/auth/register"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "username": username,
@@ -26,23 +25,25 @@ class AuthService {
       }),
     );
 
-    if(response.statusCode != 200){
-      throw Exception("Registration failed");
+    if (response.statusCode != 200) {
+      try {
+        final data = jsonDecode(response.body);
+        throw Exception(data["detail"] ?? "Registration failed");
+      } catch (_) {
+        throw Exception("Registration failed");
+      }
     }
 
-    return User.fromJson(
-      jsonDecode(response.body),
-    );
+    return User.fromJson(jsonDecode(response.body));
   }
 
-
+  // Вход в систему
   static Future<String> login({
     required String username,
     required String password,
   }) async {
-
     final response = await http.post(
-      Uri.parse("$baseUrl/users/login"),
+      Uri.parse("$baseUrl/auth/login"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "username": username,
@@ -50,8 +51,7 @@ class AuthService {
       }),
     );
 
-
-    if(response.statusCode != 200){
+    if (response.statusCode != 200) {
       throw Exception("Login failed");
     }
 
@@ -61,19 +61,19 @@ class AuthService {
     return token;
   }
 
+  // ТОКЕН
   static Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      "token",
-      token,
-    );
+    await prefs.setString("token", token);
   }
 
+  // Получить токен из SharedPreferences
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString("token");
   }
 
+  // Выход из системы — удаляет токен
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("token");

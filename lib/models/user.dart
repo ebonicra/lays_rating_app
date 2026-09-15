@@ -2,7 +2,7 @@ class User {
   final int id;
   final String username;
   final String displayName;
-  final bool isAdmin;
+  final String role;
   final String? avatarUrl;
   final DateTime createdAt;
 
@@ -10,22 +10,24 @@ class User {
     required this.id,
     required this.username,
     required this.displayName,
-    required this.isAdmin,
+    required this.role,
     this.avatarUrl,
     required this.createdAt,
   });
 
+  bool get isAdmin => role == 'admin' || role == 'super_admin';
+  bool get isSuperAdmin => role == 'super_admin';
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json["id"],
       username: json["username"],
       displayName: json["display_name"],
-      isAdmin: json['is_admin'] ?? false,
-      avatarUrl: json['avatar_url'],
-      createdAt: json['created_at'] != null
-        ? DateTime.parse(json['created_at'])
-        : DateTime.now(), // ← добавили
+      role: json["role"] ?? "user",
+      avatarUrl: json["avatar_url"],
+      createdAt: json["created_at"] != null
+          ? DateTime.parse(json["created_at"])
+          : DateTime.now(),
     );
   }
 }

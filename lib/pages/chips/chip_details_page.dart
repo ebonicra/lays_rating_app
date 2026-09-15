@@ -4,8 +4,8 @@ import 'package:lays_rating/models/chip.dart';
 import 'package:lays_rating/models/chip_preference.dart';
 
 import 'package:lays_rating/services/chip_service.dart';
-import 'package:lays_rating/services/chip_preference_service.dart';
-import 'package:lays_rating/services/comments_server.dart';
+import 'package:lays_rating/services/preference_service.dart';
+import 'package:lays_rating/services/comments_service.dart';
 import 'package:lays_rating/services/user_service.dart'; // если ещё нет
 import 'package:lays_rating/pages/admin/edit_chip_page.dart';
 import 'package:lays_rating/widgets/comments_page.dart';
@@ -45,7 +45,7 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
             widget.chipId,
           );
       final preferenceResult =
-          await ChipPreferenceService.getPreference(
+          await PreferenceService.getPreference(
             widget.chipId,
           );
 
@@ -68,10 +68,10 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
 
       if (value == 0) {
         // Удаляем оценку
-        updated = await ChipPreferenceService.deleteRating(widget.chipId);
+        updated = await PreferenceService.deleteRating(widget.chipId);
       } else {
         // Ставим оценку
-        updated = await ChipPreferenceService.updatePreference(
+        updated = await PreferenceService.updatePreference(
           chipId: widget.chipId,
           rating: value,
         );
@@ -98,7 +98,7 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
     }
 
     final updated =
-        await ChipPreferenceService.updatePreference(
+        await PreferenceService.updatePreference(
           chipId: widget.chipId,
           isFavorite: !preference!.isFavorite,
         );
@@ -114,7 +114,7 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
     }
 
     final updated =
-        await ChipPreferenceService.updatePreference(
+        await PreferenceService.updatePreference(
           chipId: widget.chipId,
           isTried: !preference!.isTried,
         );

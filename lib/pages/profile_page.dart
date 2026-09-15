@@ -13,14 +13,17 @@ import '../pages/auth/login_page.dart';
 import '../pages/friends_page.dart';
 import '../pages/admin/admin_page.dart';
 
+import 'package:lays_rating/theme/app_theme_state.dart';
+
 import '../widgets/color_picker_sheet.dart';
 import '../widgets/theme_picker_sheet.dart';
 import '../widgets/stats_details_sheet.dart';
 import '../widgets/follows_detail_sheet.dart';
-import '../app/app.dart';
 import 'package:lays_rating/widgets/photo_carousel.dart';
 
 import 'package:lays_rating/widgets/stats_carousel.dart';
+
+import 'package:lays_rating/widgets/profile/profile_header.dart';
 
 
 
@@ -89,13 +92,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> logout() async {
     await AuthService.logout();
+    UserService.currentUser = null;   // ← сброс кэша
     if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (_) => const LoginPage(),
-      ),
+      MaterialPageRoute(builder: (_) => const LoginPage()),
       (route) => false,
     );
   }
@@ -165,90 +167,7 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             const SizedBox(height: 10),
             // Аватар + имя + username
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.7),
-                    Theme.of(context).colorScheme.inversePrimary,
-                    Theme.of(context).colorScheme.surface,  
-                    Theme.of(context).colorScheme.inversePrimary,
-                    Theme.of(context).colorScheme.surface,  
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.inversePrimary.withOpacity(0.8),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundImage: user?.avatarUrl != null
-                        ? NetworkImage('${AuthService.baseUrl}${user!.avatarUrl}')
-                        : null,
-                    child: user?.avatarUrl == null
-                        ? Text(
-                            user!.displayName.substring(0, 1).toUpperCase(),
-                            style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Transform.translate(
-                          offset: const Offset(-6, 0),
-                          child: Text(
-                            user!.displayName,
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-
-                        Text(
-                          "@${user!.username}",
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-
-                        Transform.translate(
-                          offset: const Offset(-6, 0),
-                          child: Row(
-                            children: [
-                              Icon(Icons.calendar_today, size: 14, color: Colors.grey),
-                              const SizedBox(width: 4),
-                              Text(
-                                _formatDate(user!.createdAt),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ProfileHeader(user: user!),
             const SizedBox(height: 15),
 
             // Статистика
