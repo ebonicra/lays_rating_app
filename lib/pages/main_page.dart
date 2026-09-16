@@ -18,25 +18,31 @@ class _MainPageState extends State<MainPage> {
   static const int _chipsIndex = 2;
   int _currentIndex = _chipsIndex;
 
-  static const List<Widget> _pages = [
-    GamePage(),
-    NewsPage(),
-    ChipsPage(),
-    FilterPage(),
-    ProfilePage(),
-  ];
-
   void _openChipsPage() {
     setState(() => _currentIndex = _chipsIndex);
+  }
+
+  Widget _buildCurrentPage() {
+    switch (_currentIndex) {
+      case 0:
+        return const GamePage();
+      case 1:
+        return const NewsPage();
+      case 2:
+        return const ChipsPage();
+      case 3:
+        return const FilterPage();
+      case 4:
+        return const ProfilePage();
+      default:
+        return const ChipsPage();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: _buildCurrentPage(),
 
       floatingActionButton: Transform.translate(
         offset: const Offset(0, 15),

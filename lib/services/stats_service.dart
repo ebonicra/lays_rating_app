@@ -8,111 +8,64 @@ import '../models/user_stats.dart';
 import 'auth_service.dart';
 import 'user_service.dart';
 
-
 class StatsService {
+  StatsService._();
+
+  // ===== ПУБЛИЧНЫЕ МЕТОДЫ =====
+
   static Future<UserStats> getUserStats(int userId) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception("No token");
-
-    final response = await http.get(
-      Uri.parse("${AuthService.baseUrl}/stats/$userId"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to load stats");
-    }
-    return UserStats.fromJson(jsonDecode(response.body));
+    final json = await _getJson('/stats/$userId');
+    return UserStats.fromJson(json as Map<String, dynamic>);
   }
 
   static Future<UserStats> getMyStats() async {
     final userId = UserService.currentUser?.id;
-    if (userId == null) throw Exception("User not loaded");
+    if (userId == null) throw Exception('User not loaded');
     return getUserStats(userId);
   }
 
-  static Future<List<StatChip>> getFavoriteChips(int userId) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception("No token");
+  static Future<List<StatChip>> getFavoriteChips(int userId) =>
+      _getList('/stats/$userId/favorites', StatChip.fromJson);
 
-    final response = await http.get(
-      Uri.parse("${AuthService.baseUrl}/stats/$userId/favorites"),
-      headers: {"Authorization": "Bearer $token"},
-    );
+  static Future<List<StatChip>> getTriedChips(int userId) =>
+      _getList('/stats/$userId/tried', StatChip.fromJson);
+
+  static Future<List<StatChip>> getRatings(int userId) =>
+      _getList('/stats/$userId/ratings', StatChip.fromJson);
+
+  static Future<List<StatChip>> getCommentedChips(int userId) =>
+      _getList('/stats/$userId/commented-chips', StatChip.fromJson);
+
+  static Future<List<FollowUser>> getFriendsAverageRating(int userId) =>
+      _getList('/stats/$userId/friends-average-rating', FollowUser.fromJson);
+
+  // ===== ПРИВАТНЫЕ ХЕЛПЕРЫ =====
+
+  /// GET-запрос, возвращает декодированный JSON (Map или List).
+  static Future<dynamic> _getJson(String path) async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('No token');
+
+    final response = await http
+        .get(
+          Uri.parse('${AuthService.baseUrl}$path'),
+          headers: {'Authorization': 'Bearer $token'},
+        )
+        .timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
-      throw Exception("Failed to load favorites");
+      throw Exception('Failed to load: $path (${response.statusCode})');
     }
 
-    final data = jsonDecode(response.body) as List;
-    return data.map((c) => StatChip.fromJson(c)).toList();
+    return jsonDecode(response.body);
   }
 
-  static Future<List<StatChip>> getTriedChips(int userId) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception("No token");
-
-    final response = await http.get(
-      Uri.parse("${AuthService.baseUrl}/stats/$userId/tried"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to load tried chips");
-    }
-
-    final data = jsonDecode(response.body) as List;
-    return data.map((c) => StatChip.fromJson(c)).toList();
-  }
-
-  static Future<List<StatChip>> getRatings(int userId) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception("No token");
-
-    final response = await http.get(
-      Uri.parse("${AuthService.baseUrl}/stats/$userId/ratings"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to load ratings");
-    }
-
-    final data = jsonDecode(response.body) as List;
-    return data.map((c) => StatChip.fromJson(c)).toList();
-  }
-
-  static Future<List<FollowUser>> getFriendsAverageRating(int userId) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception("No token");
-
-    final response = await http.get(
-      Uri.parse("${AuthService.baseUrl}/stats/$userId/friends-average-rating"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to load friends rating");
-    }
-
-    final data = jsonDecode(response.body) as List;
-    return data.map((f) => FollowUser.fromJson(f)).toList();
-  }
-
-  static Future<List<StatChip>> getCommentedChips(int userId) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception("No token");
-
-    final response = await http.get(
-      Uri.parse("${AuthService.baseUrl}/stats/$userId/commented-chips"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception("Failed to load commented chips");
-    }
-
-    final data = jsonDecode(response.body) as List;
-    return data.map((c) => StatChip.fromJson(c)).toList();
+  /// GET-запрос, возвращает список моделей, декодированных через [fromJson].
+  static Future<List<T>> _getList<T>(String path, T Function(Map<String, dynamic>) fromJson) async {
+    final json = await _getJson(path);
+    final list = json as List;
+    return list
+        .map((item) => fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 }

@@ -10,20 +10,15 @@ import '../services/user_service.dart';
 import '../services/stats_service.dart';
 import '../services/avatar_service.dart';
 import '../pages/auth/login_page.dart';
-import '../pages/friends_page.dart';
-import '../pages/admin/admin_page.dart';
 
-import 'package:lays_rating/theme/app_theme_state.dart';
+import 'package:lays_rating/widgets/profile/photos/photo_carousel.dart';
+import '../widgets/profile/profile_appearance_card.dart';
 
-import '../widgets/color_picker_sheet.dart';
-import '../widgets/theme_picker_sheet.dart';
-import '../widgets/stats_details_sheet.dart';
-import '../widgets/follows_detail_sheet.dart';
-import 'package:lays_rating/widgets/photo_carousel.dart';
-
-import 'package:lays_rating/widgets/stats_carousel.dart';
 
 import 'package:lays_rating/widgets/profile/profile_header.dart';
+import 'package:lays_rating/widgets/profile/profile_stats_carousel.dart';
+import 'package:lays_rating/widgets/profile/profile_friends_card.dart';
+import 'package:lays_rating/widgets/profile/profile_admin_card.dart';
 
 
 
@@ -44,7 +39,6 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-
     loadUser();
     loadStats();
   }
@@ -52,9 +46,10 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> loadStats() async {
     try {
       final result = await StatsService.getMyStats();
+      if (!mounted) return;
       setState(() => stats = result);
-    } catch (e) {
-      // молча, не критично
+    } catch (e, st) {
+      debugPrintStack(stackTrace: st);
     }
   }
 
@@ -104,9 +99,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentColor = AppThemeState.instance.accentColor;
-    final currentTheme = AppThemeState.instance.themeMode;
-
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -171,150 +163,23 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 15),
 
             // Статистика
-            SizedBox(
-              height: 100,
-              child: InfiniteStatsCarousel(
-                items: [
-                  StatSquareData(
-                    icon: Icons.star_rounded,
-                    label: 'Оценок',
-                    value: '${stats?.ratingsCount ?? 0}',
-                    onTap: () => _showRatingsDetails(),
-                  ),
-                  StatSquareData(
-                    icon: Icons.favorite_rounded,
-                    label: 'Любимчиков',
-                    value: '${stats?.favoritesCount ?? 0}',
-                    onTap: () => _showFavoritesDetails(),
-                  ),
-                  StatSquareData(
-                    icon: Icons.check_circle_rounded,
-                    label: 'Пробовал',
-                    value: '${stats?.triedCount ?? 0}',
-                    onTap: () => _showTriedDetails(),
-                  ),
-                  StatSquareData(
-                    icon: Icons.chat_bubble_rounded,
-                    label: 'Комментариев',
-                    value: '${stats?.commentsCount ?? 0}',
-                    onTap: () => _showCommentsDetails(),
-                  ),
-                  StatSquareData(
-                    icon: Icons.trending_up_rounded,
-                    label: 'Средняя',
-                    value: '${stats?.averageRating ?? 0.0}',
-                    onTap: () => _showFollowingWithRatingDetails(),
-                  ),
-                  StatSquareData(
-                    icon: Icons.group_rounded,
-                    label: 'Подписчиков',
-                    value: '${stats?.followersCount ?? 0}',
-                    onTap: () => _showFollowersDetails(),
-                  ),
-                  StatSquareData(
-                    icon: Icons.person_add_alt_rounded,
-                    label: 'Подписок',
-                    value: '${stats?.followingCount ?? 0}',
-                    onTap: () => _showFollowingDetails(),
-                  ),
-                ],
-              ),
-            ),
+            ProfileStatsCarousel(stats: stats, userId: user!.id),
             const SizedBox(height: 8),
 
             // Карусель фото
-            PhotoCarousel(
-              userId: user!.id,
-              isMyProfile: true,
-            ),
+            ProfilePhotoCarousel(userId: user!.id, isMyProfile: true),
             const SizedBox(height: 15),
 
-            // Настройки
-            Card(
-              child: Column(
-                children: [
-
-                  // Цвет приложения
-                  ListTile(
-                    leading: const Icon(Icons.color_lens),
-                    title: const Text("Цвет приложения"),
-                    subtitle: Text(_getColorName(currentColor)),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => ColorWheelDialog(
-                          currentColor: currentColor,
-                          onColorChanged: (color) {
-                            AppThemeState.instance.setAccentColor(color);
-                            setState(() {});
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  // Тема приложения
-                  ListTile(
-                    leading: const Icon(Icons.brightness_6_rounded),
-                    title: const Text("Тема приложения"),
-                    subtitle: Text(_getThemeName(currentTheme)),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => ThemeWheelDialog(
-                          currentTheme: currentTheme,
-                          onThemeChanged: (mode) {
-                            AppThemeState.instance.setThemeMode(mode);
-                            setState(() {});
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
+            // Настройки внешнего вида
+            const ProfileAppearanceCard(),
             const SizedBox(height: 2),
 
             // Друзья
-            Card(
-              child: ListTile(
-                leading: Icon(Icons.group_rounded),
-                title: const Text("Друзья и приятели"),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => FriendsPage(userId: user!.id),
-                    ),
-                  );
-                },
-              ),
-            ),
+            ProfileFriendsCard(userId: user!.id),
             const SizedBox(height: 2),
 
             // Админка
-            if (user!.isAdmin) ...[
-              Card(
-                child: ListTile(
-                  leading: Icon(
-                    Icons.admin_panel_settings_rounded,
-                    color: Colors.red.shade400,
-                  ),
-                  title: const Text("Админ-панель"),
-                  subtitle: const Text("Управление приложением"),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AdminPage()),
-                    );
-                  },
-                ),
-              ),
-            ],
+            if (user!.isAdmin) const ProfileAdminCard(),
             const SizedBox(height: 5),
 
             // Кнопка выхода
@@ -335,33 +200,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
-  }
 
-  String _getColorName(String color) {
-    switch (color) {
-      case 'pink':
-        return 'Розовый';
-      case 'blue':
-        return 'Синий';
-      case 'black':
-        return 'Чёрный';
-      default:
-        return 'Розовый';
-    }
-  }
-
-  String _getThemeName(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return 'Светлая';
-      case ThemeMode.dark:
-        return 'Тёмная';
-      case ThemeMode.system:
-        return 'Системная';
-    }
-  }
 
 
   void _showEditProfileDialog() {
@@ -554,110 +393,4 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-
-  void _showFavoritesDetails() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => ChipsDetailSheet(
-        title: 'Любимчики',
-        icon: Icons.favorite_rounded,
-        userId: user!.id,
-        type: ChipsListType.favorites,
-      ),
-    );
-  }
-
-  void _showTriedDetails() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => ChipsDetailSheet(
-        title: 'Пробовал',
-        icon: Icons.check_circle_rounded,
-        userId: user!.id,
-        type: ChipsListType.tried,
-      ),
-    );
-  }
-
-  void _showRatingsDetails() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => ChipsDetailSheet(
-        title: 'Оценки',
-        icon: Icons.star_rounded,
-        userId: user!.id,
-        type: ChipsListType.ratings,
-      ),
-    );
-  }
-
-  void _showFollowingDetails() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => FollowsDetailSheet(
-        title: 'Подписки',
-        icon: Icons.person_add_alt_rounded,
-        userId: user!.id,
-        type: FollowsSheetType.following,
-      ),
-    );
-  }
-
-  void _showFollowersDetails() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => FollowsDetailSheet(
-        title: 'Подписчики',
-        icon: Icons.group_rounded,
-        userId: user!.id,
-        type: FollowsSheetType.followers,
-      ),
-    );
-  }
-
-  void _showFollowingWithRatingDetails() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => FollowsDetailSheet(
-        title: 'Средняя оценка друзей',
-        icon: Icons.trending_up_rounded,
-        userId: user!.id,
-        type: FollowsSheetType.friendsAverageRating,
-      ),
-    );
-  }
-
-  void _showCommentsDetails() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => ChipsDetailSheet(
-        title: 'Комментарии',
-        icon: Icons.chat_bubble_rounded,
-        userId: user!.id,
-        type: ChipsListType.comments,
-      ),
-    );
-  }
-
 }

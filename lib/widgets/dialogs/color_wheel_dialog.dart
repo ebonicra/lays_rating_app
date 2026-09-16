@@ -1,34 +1,37 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import '../theme/colors.dart';
+
+import 'package:lays_rating/theme/colors.dart';
 
 class ColorWheelDialog extends StatefulWidget {
-  final String currentColor;
-  final ValueChanged<String> onColorChanged;
-
   const ColorWheelDialog({
     super.key,
     required this.currentColor,
     required this.onColorChanged,
   });
 
+  final String currentColor;
+  final ValueChanged<String> onColorChanged;
+
   @override
   State<ColorWheelDialog> createState() => _ColorWheelDialogState();
 }
+
 class _ColorWheelDialogState extends State<ColorWheelDialog>
     with TickerProviderStateMixin {
   late AnimationController _spinController;
   late Animation<double> _spinAnimation;
   late Animation<double> _scaleAnimation;
-  
-  late AnimationController _closeController; // ← отдельный контроллер
+
+  late AnimationController _closeController;
   late Animation<double> _closeScaleAnimation;
   late Animation<double> _closeRotateAnimation;
 
   @override
   void initState() {
     super.initState();
-    
+
     // Появление
     _spinController = AnimationController(
       duration: const Duration(milliseconds: 1500),
@@ -68,10 +71,9 @@ class _ColorWheelDialogState extends State<ColorWheelDialog>
     super.dispose();
   }
 
-  // Метод выбора с анимацией исчезновения
   Future<void> _selectColor(String value) async {
-    await _closeController.forward(); // ← запускаем анимацию закрытия
-    
+    await _closeController.forward();
+
     if (mounted) {
       widget.onColorChanged(value);
       Navigator.pop(context);
@@ -85,9 +87,9 @@ class _ColorWheelDialogState extends State<ColorWheelDialog>
       child: AnimatedBuilder(
         animation: Listenable.merge([_spinAnimation, _closeScaleAnimation]),
         builder: (context, child) {
-          // Проверяем, идёт ли закрытие
-          final isClosing = _closeController.isAnimating || _closeController.status == AnimationStatus.completed;
-          
+          final isClosing = _closeController.isAnimating ||
+              _closeController.status == AnimationStatus.completed;
+
           if (isClosing) {
             return Transform.scale(
               scale: _closeScaleAnimation.value,
@@ -153,7 +155,7 @@ class _ColorWheelDialogState extends State<ColorWheelDialog>
       left: center + dx - 38,
       top: center + dy - 38,
       child: GestureDetector(
-        onTap: () => _selectColor(value), // ← новый метод
+        onTap: () => _selectColor(value),
         child: Container(
           width: 90,
           height: 90,

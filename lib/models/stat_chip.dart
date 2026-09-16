@@ -1,15 +1,4 @@
 class StatChip {
-  final int id;
-  final String name;
-  final double averageRating;
-  final int ratingCount;
-  final int favoriteCount;
-  final int triedCount;
-  final int? myRating; // ← добавили
-  final String imagePath;
-  final int myCommentsCount; // ← добавили
-  final int reactionsCount; 
-
   const StatChip({
     required this.id,
     required this.name,
@@ -17,24 +6,41 @@ class StatChip {
     required this.ratingCount,
     required this.favoriteCount,
     required this.triedCount,
-    this.myRating,
-    this.myCommentsCount = 0, // ← по умолчанию 0
-    this.reactionsCount = 0,
     required this.imagePath,
+    this.myRating,
+    this.myCommentsCount = 0,
+    this.reactionsCount = 0,
   });
+
+  final int id;
+  final String name;
+  final double averageRating;
+  final int ratingCount;
+  final int favoriteCount;
+  final int triedCount;
+  final String imagePath;
+
+  /// Моя оценка. `null` — если не оценивал.
+  final int? myRating;
+
+  /// Количество моих комментариев к чипсу.
+  final int myCommentsCount;
+
+  /// Количество реакций на мои комментарии.
+  final int reactionsCount;
 
   factory StatChip.fromJson(Map<String, dynamic> json) {
     return StatChip(
-      id: json['id'],
-      name: json['name'],
-      averageRating: (json['average_rating'] ?? 0).toDouble(),
-      ratingCount: json['rating_count'] ?? 0,
-      favoriteCount: json['favorite_count'] ?? 0,
-      triedCount: json['tried_count'] ?? 0,
-      myRating: json['my_rating'],
-      myCommentsCount: json['my_comments_count'] ?? 0,
-      reactionsCount: json['reactions_count'] ?? 0,
-      imagePath: json['image_path'] ?? '',
+      id: json['id'] as int,
+      name: json['name'] as String,
+      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
+      ratingCount: (json['rating_count'] as num?)?.toInt() ?? 0,
+      favoriteCount: (json['favorite_count'] as num?)?.toInt() ?? 0,
+      triedCount: (json['tried_count'] as num?)?.toInt() ?? 0,
+      imagePath: json['image_path'] as String? ?? '',
+      myRating: (json['my_rating'] as num?)?.toInt(),
+      myCommentsCount: (json['my_comments_count'] as num?)?.toInt() ?? 0,
+      reactionsCount: (json['reactions_count'] as num?)?.toInt() ?? 0,
     );
   }
 }

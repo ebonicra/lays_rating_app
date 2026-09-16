@@ -4,12 +4,15 @@ import '../models/user_stats.dart';
 import 'package:lays_rating/services/follow_service.dart';
 import 'package:lays_rating/services/user_service.dart';
 import 'package:lays_rating/services/auth_service.dart';
-import 'package:lays_rating/widgets/stats_carousel.dart';
-import 'package:lays_rating/widgets/photo_carousel.dart';
+import 'package:lays_rating/widgets/stats/stats_carousel.dart';
+import 'package:lays_rating/widgets/profile/photos/photo_carousel.dart';
+
+import 'package:lays_rating/models/stat_square_data.dart';
 
 
-import '../widgets/stats_details_sheet.dart';
-import '../widgets/follows_detail_sheet.dart';
+
+import '../widgets/stats/chips_sheet.dart';
+import '../widgets/stats/follows_sheet.dart';
 
 
 import '../services/stats_service.dart';
@@ -289,7 +292,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
             ),
             const SizedBox(height: 5),
             
-            PhotoCarousel(
+            ProfilePhotoCarousel(
               userId: user!.id,
               isMyProfile: false, // ← false, потому что это чужой профиль
             ),
@@ -379,7 +382,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => ChipsDetailSheet(
+      builder: (context) => ChipsSheet(
         title: 'Любимчики',
         icon: Icons.favorite_rounded,
         userId: widget.userId,
@@ -394,7 +397,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => ChipsDetailSheet(
+      builder: (context) => ChipsSheet(
         title: 'Пробовал',
         icon: Icons.check_circle_rounded,
         userId: widget.userId,
@@ -409,7 +412,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => ChipsDetailSheet(
+      builder: (context) => ChipsSheet(
         title: 'Оценки',
         icon: Icons.star_rounded,
         userId: widget.userId,
@@ -425,7 +428,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => FollowsDetailSheet(
+      builder: (context) => FollowsSheet(
         title: 'Подписки',
         icon: Icons.person_add_alt_rounded,
         userId: widget.userId,
@@ -440,7 +443,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => FollowsDetailSheet(
+      builder: (context) => FollowsSheet(
         title: 'Подписчики',
         icon: Icons.group_rounded,
         userId: widget.userId,
@@ -455,7 +458,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => FollowsDetailSheet(
+      builder: (context) => FollowsSheet(
         title: 'Средняя оценка друзей',
         icon: Icons.trending_up_rounded,
         userId: widget.userId,
@@ -470,7 +473,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => ChipsDetailSheet(
+      builder: (context) => ChipsSheet(
         title: 'Комментариев',
         icon: Icons.chat_bubble_rounded,
         userId: widget.userId,

@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
+
 import 'package:lays_rating/models/stat_chip.dart';
-import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/pages/chips/chip_details_page.dart';
+import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/services/stats_service.dart';
 
-/// Универсальный bottom sheet для списка чипсов (любимчики, пробовал, оценки)
-class ChipsDetailSheet extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final int userId;
-  final ChipsListType type;
 
-  const ChipsDetailSheet({
+class ChipsSheet extends StatefulWidget {
+  const ChipsSheet({
     super.key,
     required this.title,
     required this.icon,
@@ -19,12 +15,56 @@ class ChipsDetailSheet extends StatelessWidget {
     required this.type,
   });
 
+  final String title;
+  final IconData icon;
+  final int userId;
+  final ChipsListType type;
+
+  @override
+  State<ChipsSheet> createState() => _ChipsSheetState();
+}
+
+class _ChipsSheetState extends State<ChipsSheet> {
+  late final Future<List<StatChip>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _fetchChips();
+  }
+
+  Future<List<StatChip>> _fetchChips() {
+    switch (widget.type) {
+      case ChipsListType.favorites:
+        return StatsService.getFavoriteChips(widget.userId);
+      case ChipsListType.tried:
+        return StatsService.getTriedChips(widget.userId);
+      case ChipsListType.ratings:
+        return StatsService.getRatings(widget.userId);
+      case ChipsListType.comments:
+        return StatsService.getCommentedChips(widget.userId);
+    }
+  }
+
+  String _getEmptyText() {
+    switch (widget.type) {
+      case ChipsListType.favorites:
+        return 'Пока нет любимчиков';
+      case ChipsListType.tried:
+        return 'Пока ничего не пробовал';
+      case ChipsListType.ratings:
+        return 'Пока нет оценок';
+      case ChipsListType.comments:
+        return 'Пока нет комментариев';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.7,
       child: FutureBuilder<List<StatChip>>(
-        future: _fetchChips(),
+        future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -53,10 +93,14 @@ class ChipsDetailSheet extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, size: 28, color: Theme.of(context).colorScheme.primary),
+                    Icon(
+                      widget.icon,
+                      size: 28,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     const SizedBox(width: 10),
                     Text(
-                      title,
+                      widget.title,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -69,10 +113,9 @@ class ChipsDetailSheet extends StatelessWidget {
                   child: ListView.builder(
                     itemCount: chips.length,
                     itemBuilder: (context, index) {
-                      final chip = chips[index];
                       return _ChipTile(
-                        chip: chip,
-                        type: type, // ← передаём тип
+                        chip: chips[index],
+                        type: widget.type,
                       );
                     },
                   ),
@@ -84,52 +127,28 @@ class ChipsDetailSheet extends StatelessWidget {
       ),
     );
   }
-
-  Future<List<StatChip>> _fetchChips() {
-    switch (type) {
-      case ChipsListType.favorites:
-        return StatsService.getFavoriteChips(userId);
-      case ChipsListType.tried:
-        return StatsService.getTriedChips(userId);
-      case ChipsListType.ratings:
-        return StatsService.getRatings(userId);
-      case ChipsListType.comments:
-        return StatsService.getCommentedChips(userId);
-    }
-  }
-
-  String _getEmptyText() {
-    switch (type) {
-      case ChipsListType.favorites:
-        return 'Пока нет любимчиков';
-      case ChipsListType.tried:
-        return 'Пока ничего не пробовал';
-      case ChipsListType.ratings:
-        return 'Пока нет оценок';
-      case ChipsListType.comments:
-        return 'Пока нет комментариев';
-    }
-  }
 }
 
 enum ChipsListType {
   favorites,
   tried,
   ratings,
-  comments
+  comments,
 }
 
 class _ChipTile extends StatelessWidget {
-  final StatChip chip;
-  final ChipsListType type;
-
   const _ChipTile({
     required this.chip,
     required this.type,
   });
 
+  final StatChip chip;
+  final ChipsListType type;
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ListTile(
       leading: ClipRRect(
         borderRadius: BorderRadius.circular(8),
@@ -137,13 +156,14 @@ class _ChipTile extends StatelessWidget {
           '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
           width: 60,
           height: 70,
+          cacheWidth: 120,
           fit: BoxFit.cover,
           loadingBuilder: (context, child, progress) {
             if (progress == null) return child;
             return Container(
               width: 60,
               height: 70,
-              color: Colors.grey.shade200,
+              color: colorScheme.surfaceContainerHighest,
               child: const Center(
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
@@ -153,9 +173,13 @@ class _ChipTile extends StatelessWidget {
             return Container(
               width: 60,
               height: 70,
-              color: Colors.grey.shade200,
-              child: const Center(
-                child: Icon(Icons.broken_image, color: Colors.grey, size: 20),
+              color: colorScheme.surfaceContainerHighest,
+              child: Center(
+                child: Icon(
+                  Icons.broken_image,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
               ),
             );
           },
@@ -163,10 +187,10 @@ class _ChipTile extends StatelessWidget {
       ),
       title: Text(chip.name),
       subtitle: Text(
-        _getSubtitle(), // ← гибкий subtitle
+        _getSubtitle(),
         style: TextStyle(
           fontSize: 12,
-          color: Colors.grey.shade600,
+          color: colorScheme.onSurfaceVariant,
         ),
       ),
       onTap: () {
@@ -181,7 +205,6 @@ class _ChipTile extends StatelessWidget {
     );
   }
 
-  /// Возвращает подпись в зависимости от типа списка
   String _getSubtitle() {
     switch (type) {
       case ChipsListType.favorites:
@@ -189,7 +212,7 @@ class _ChipTile extends StatelessWidget {
           return 'Первый, кто оценил!';
         }
         return '❤️ ${chip.favoriteCount} оценили';
-      
+
       case ChipsListType.tried:
         if (chip.triedCount == 1) {
           return 'Первый, кто попробовал!';

@@ -1,15 +1,16 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 class ThemeWheelDialog extends StatefulWidget {
-  final ThemeMode currentTheme;
-  final ValueChanged<ThemeMode> onThemeChanged;
-
   const ThemeWheelDialog({
     super.key,
     required this.currentTheme,
     required this.onThemeChanged,
   });
+
+  final ThemeMode currentTheme;
+  final ValueChanged<ThemeMode> onThemeChanged;
 
   @override
   State<ThemeWheelDialog> createState() => _ThemeWheelDialogState();
