@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 
-enum ChipCategory {
+enum ChipType {
   classic(
     "classic",
     "Классические",
@@ -51,7 +51,7 @@ enum ChipCategory {
   final String description;
   final IconData icon;
 
-  const ChipCategory(
+  const ChipType(
     this.value,
     this.title,
     this.description,

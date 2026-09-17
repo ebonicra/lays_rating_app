@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/stat_chip.dart';
-import 'package:lays_rating/pages/chips/chip_details_page.dart';
+import 'package:lays_rating/widgets/chips/chip_details_page.dart';
 import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/services/stats_service.dart';
 

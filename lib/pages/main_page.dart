@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:lays_rating/pages/chips/chips_page.dart';
 import 'package:lays_rating/pages/game_page.dart';
 import 'package:lays_rating/pages/news_page.dart';
-import 'package:lays_rating/pages/profile_page.dart';
-import 'package:lays_rating/pages/filter_page.dart';
+import 'package:lays_rating/pages/profile/profile_page.dart';
+import 'package:lays_rating/pages/filters/filter_page.dart';
 
 
 class MainPage extends StatefulWidget {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/user_photo.dart';
-import 'package:lays_rating/pages/public_profile_page.dart';
+import 'package:lays_rating/pages/profile/public_profile_page.dart';
 import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/services/photo_service.dart';
 

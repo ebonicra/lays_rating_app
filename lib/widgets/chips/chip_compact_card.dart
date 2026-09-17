@@ -1,62 +1,56 @@
 import 'package:flutter/material.dart';
+
 import 'package:lays_rating/models/chip.dart';
-import 'package:lays_rating/pages/chips/chip_details_page.dart';
+import 'package:lays_rating/widgets/chips/chip_details_page.dart';
+import 'package:lays_rating/services/auth_service.dart';
 
-import '../services/auth_service.dart';
+const double _imageWidth = 100;
+const double _imageHeight = 130;
 
-class ChipCard extends StatelessWidget {
-  final LaysChip chip;
-  final VoidCallback? onReturn;
-
-  const ChipCard({
+class ChipCompactCard extends StatelessWidget {
+  const ChipCompactCard({
     super.key,
     required this.chip,
     this.onReturn,
   });
 
+  final LaysChip chip;
+  final VoidCallback? onReturn;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
+    final colorScheme = Theme.of(context).colorScheme;
 
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-
         onTap: () async {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ChipDetailsPage(
-                chipId: chip.id,
-              ),
+              builder: (_) => ChipDetailsPage(chipId: chip.id),
             ),
           );
           onReturn?.call();
         },
-
         child: Padding(
           padding: const EdgeInsets.all(12),
-
           child: Row(
             children: [
-
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Image.network(
                   '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
-                  width: 100,
-                  height: 130,
+                  width: _imageWidth,
+                  height: _imageHeight,
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) return child;
                     return Container(
-                      width: 100,
-                      height: 130,
-                      color: Colors.grey.shade200,
+                      width: _imageWidth,
+                      height: _imageHeight,
+                      color: colorScheme.surfaceContainerHighest,
                       child: const Center(
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
@@ -64,21 +58,23 @@ class ChipCard extends StatelessWidget {
                   },
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      width: 100,
-                      height: 130,
-                      color: Colors.grey.shade200,
-                      child: const Center(
-                        child: Icon(Icons.broken_image, color: Colors.grey),
+                      width: _imageWidth,
+                      height: _imageHeight,
+                      color: colorScheme.surfaceContainerHighest,
+                      child: Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     );
                   },
                 ),
               ),
               const SizedBox(width: 16),
-
               Expanded(
                 child: SizedBox(
-                  height: 130,
+                  height: _imageHeight,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -92,16 +88,14 @@ class ChipCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-
                       Text(
                         chip.category.title,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey.shade600,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 4),
-
                       Row(
                         children: [
                           Icon(
@@ -109,28 +103,21 @@ class ChipCard extends StatelessWidget {
                                 ? Icons.shopping_bag_outlined
                                 : Icons.inventory_2_outlined,
                             size: 16,
-                            color: Colors.grey.shade600,
+                            color: colorScheme.onSurfaceVariant,
                           ),
-
                           const SizedBox(width: 4),
-
                           Text(
-                            chip.available
-                                ? "В продаже"
-                                : "Архивный вкус",
+                            chip.available ? 'В продаже' : 'Архивный вкус',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey.shade600,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
                       ),
-
                       const Spacer(),
-
                       Row(
                         children: [
-
                           const Icon(
                             Icons.star_rounded,
                             color: Colors.amber,
@@ -144,24 +131,22 @@ class ChipCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            " (${chip.rating.count})",
+                            ' (${chip.rating.count})',
                             style: TextStyle(
-                              color: Colors.grey.shade500,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(width: 16),
-
                           Icon(
                             Icons.chat_bubble_outline_rounded,
                             size: 17,
-                            color: Colors.grey.shade600,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 3),
                           Text(
-                            // "10",
                             chip.commentCount.toString(),
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -169,7 +154,7 @@ class ChipCard extends StatelessWidget {
                     ],
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),

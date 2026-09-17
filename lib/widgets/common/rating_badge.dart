@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Плашка с оценкой
+/// Плашка с одной оценкой (например, оценка комментария).
 class RatingBadge extends StatelessWidget {
-  final int rating;
-  final double iconSize;
-  final double fontSize;
-
   const RatingBadge({
     super.key,
     required this.rating,
@@ -13,20 +9,26 @@ class RatingBadge extends StatelessWidget {
     this.fontSize = 15,
   });
 
+  final int rating;
+  final double iconSize;
+  final double fontSize;
+
   @override
   Widget build(BuildContext context) {
+    final colors = _ratingColors(rating);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         gradient: LinearGradient(
-          colors: _getRatingColors(rating),
+          colors: colors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: _getRatingColors(rating)[0].withOpacity(0.3),
+            color: colors[0].withOpacity(0.3),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -50,11 +52,11 @@ class RatingBadge extends StatelessWidget {
     );
   }
 
-  List<Color> _getRatingColors(int rating) {
-    if (rating >= 5) return [Color(0xFF00E676), Color(0xFF1B5E20)];
-    if (rating >= 4) return [Color(0xFFAED581), Color(0xFF00E676)];
-    if (rating >= 3) return [Color(0xFFFFC107), Color(0xFFFF9800)];
-    if (rating >= 2) return [Color(0xFFE65100), Color(0xFFFF9800)];
-    return [Color(0xFFD32F2F), Color(0xFFB71C1C)];
+  List<Color> _ratingColors(int rating) {
+    if (rating >= 5) return const [Color(0xFF00E676), Color(0xFF1B5E20)];
+    if (rating >= 4) return const [Color(0xFFAED581), Color(0xFF00E676)];
+    if (rating >= 3) return const [Color(0xFFFFC107), Color(0xFFFF9800)];
+    if (rating >= 2) return const [Color(0xFFE65100), Color(0xFFFF9800)];
+    return const [Color(0xFFD32F2F), Color(0xFFB71C1C)];
   }
 }

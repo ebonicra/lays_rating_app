@@ -7,7 +7,7 @@ import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/widgets/user_card.dart';
 
 
-import '../pages/public_profile_page.dart';
+import 'profile/public_profile_page.dart';
 
 class UserSearchPage extends StatefulWidget {
   const UserSearchPage({super.key});

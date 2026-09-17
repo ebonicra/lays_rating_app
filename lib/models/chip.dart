@@ -1,69 +1,27 @@
-import 'dart:ffi';
+import 'package:lays_rating/models/chip_type.dart';
 
-enum ChipCategory {
-  stix,
-  classic,
-  maxx,
-  stax,
-  baked,
-  ridged,
-}
-
-
-extension ChipCategoryExtension on ChipCategory {
-  String get title {
-    switch (this) {
-      case ChipCategory.classic:
-        return "Классические";
-      case ChipCategory.maxx:
-        return "Maxx";
-      case ChipCategory.stix:
-        return "Stix";
-      case ChipCategory.stax:
-        return "Stax";
-      case ChipCategory.baked:
-        return "Из печи";
-      case ChipCategory.ridged:
-        return "Рифленные";
-    }
-  }
-}
 
 class ChipRating {
-  final double average;
-  final int count;
-  final int? userRating;
-
   const ChipRating({
     required this.average,
     required this.count,
     this.userRating,
   });
 
-  factory ChipRating.fromJson(
-    Map<String, dynamic> json
-  ) {
+  final double average;
+  final int count;
+  final int? userRating;
+
+  factory ChipRating.fromJson(Map<String, dynamic> json) {
     return ChipRating(
-      average: (json["average"] ?? 0).toDouble(),
-      count: json["count"] ?? 0,
-      userRating: json["user_rating"],
+      average: (json['average'] as num?)?.toDouble() ?? 0.0,
+      count: (json['count'] as num?)?.toInt() ?? 0,
+      userRating: (json['user_rating'] as num?)?.toInt(),
     );
   }
 }
 
 class LaysChip {
-  final int id;
-  final String name;
-  final ChipCategory category;
-  final String description;
-  final String imagePath;
-  final bool available;
-  final ChipRating rating;
-  final String collection;
-  final String country;
-  final int releaseYear;
-  final int commentCount;
-
   const LaysChip({
     required this.id,
     required this.name,
@@ -78,20 +36,35 @@ class LaysChip {
     required this.commentCount,
   });
 
+  final int id;
+  final String name;
+  final ChipType category;
+  final String description;
+  final String imagePath;
+  final bool available;
+  final ChipRating rating;
+  final String collection;
+  final String country;
+  final int releaseYear;
+  final int commentCount;
+
   factory LaysChip.fromJson(Map<String, dynamic> json) {
     return LaysChip(
-      id: json["id"],
-      name: json["name"],
-      category: ChipCategory.values.firstWhere((e) => e.name == json["category"]),
-      description: json["description"],
-      imagePath: json["image_path"],
-      available: json["available"],
-      collection: json["collection"],
-      country: json["country"],
-      releaseYear: json["release_year"],
-      commentCount: json["comment_count"] ?? 0,
+      id: json['id'] as int,
+      name: json['name'] as String,
+      category: ChipType.values.firstWhere(
+        (e) => e.value == json['category'],
+        orElse: () => ChipType.classic,
+      ),
+      description: json['description'] as String,
+      imagePath: json['image_path'] as String,
+      available: json['available'] as bool? ?? false,
+      collection: json['collection'] as String,
+      country: json['country'] as String,
+      releaseYear: (json['release_year'] as num?)?.toInt() ?? 0,
+      commentCount: (json['comment_count'] as num?)?.toInt() ?? 0,
       rating: ChipRating.fromJson(
-        json["rating"],
+        json['rating'] as Map<String, dynamic>,
       ),
     );
   }

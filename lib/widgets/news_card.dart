@@ -5,9 +5,9 @@ import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/services/admin_service.dart';
 import 'package:lays_rating/services/news_service.dart';
 import 'package:lays_rating/services/user_service.dart';
-import 'package:lays_rating/pages/public_profile_page.dart';
-import 'package:lays_rating/pages/chips/chip_details_page.dart';
-import 'package:lays_rating/widgets/rating_badge.dart';
+import 'package:lays_rating/pages/profile/public_profile_page.dart';
+import 'package:lays_rating/widgets/chips/chip_details_page.dart';
+import 'package:lays_rating/widgets/common/rating_badge.dart';
 import 'package:lays_rating/services/comments_service.dart';
 
 class NewsCard extends StatefulWidget {
