@@ -4,9 +4,6 @@ import 'package:lays_rating/models/chip_comment.dart';
 import 'package:lays_rating/services/comments_service.dart';
 
 /// Диалог редактирования комментария.
-///
-/// Возвращает обновлённый [ChipCommentResponse] через [Navigator.pop],
-/// либо `null`, если пользователь отменил.
 class EditCommentDialog extends StatefulWidget {
   const EditCommentDialog({
     super.key,

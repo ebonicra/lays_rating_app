@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Диалог подтверждения удаления комментария.
-class DeleteCommentDialog extends StatelessWidget {
-  const DeleteCommentDialog({super.key});
+/// Диалог подтверждения удаления новости (только для админов).
+class DeleteNewsDialog extends StatelessWidget {
+  const DeleteNewsDialog({super.key});
 
   static Future<bool?> show(BuildContext context) {
     return showDialog<bool>(
       context: context,
-      builder: (_) => const DeleteCommentDialog(),
+      builder: (_) => const DeleteNewsDialog(),
     );
   }
 
@@ -16,7 +16,7 @@ class DeleteCommentDialog extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return AlertDialog(
-      title: const Text('Удалить комментарий?'),
+      title: const Text('Удалить новость?'),
       content: const Text('Это действие нельзя отменить'),
       actions: [
         Row(

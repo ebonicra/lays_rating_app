@@ -7,6 +7,7 @@ import 'package:lays_rating/services/comments_service.dart';
 import 'package:lays_rating/services/user_service.dart';
 import 'package:lays_rating/utils/initials.dart';
 import 'package:lays_rating/widgets/common/rating_badge.dart';
+import 'package:lays_rating/widgets/common/reaction_button.dart';
 
 import 'delete_comment_dialog.dart';
 import 'edit_comment_dialog.dart';
@@ -273,7 +274,7 @@ class _CommentCardState extends State<CommentCard> {
   Widget _buildActionsRow(ThemeData theme) {
     return Row(
       children: [
-        _ReactionButton(
+        ReactionButton(
           icon: Icons.favorite_outline_rounded,
           activeIcon: Icons.favorite_rounded,
           count: _comment.likesCount,
@@ -283,7 +284,7 @@ class _CommentCardState extends State<CommentCard> {
           onTap: _handleLike,
         ),
         const SizedBox(width: 6),
-        _ReactionButton(
+        ReactionButton(
           icon: Icons.heart_broken_outlined,
           activeIcon: Icons.heart_broken_rounded,
           count: _comment.dislikesCount,
@@ -337,58 +338,6 @@ class _CommentCardState extends State<CommentCard> {
 
 // ===== ПРИВАТНЫЕ ВИДЖЕТЫ =====
 
-class _ReactionButton extends StatelessWidget {
-  const _ReactionButton({
-    required this.icon,
-    required this.activeIcon,
-    required this.count,
-    required this.isActive,
-    required this.activeColor,
-    required this.isLoading,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final IconData activeIcon;
-  final int count;
-  final bool isActive;
-  final Color activeColor;
-  final bool isLoading;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final color = isActive ? activeColor : colorScheme.onSurfaceVariant;
-
-    return InkWell(
-      onTap: isLoading ? null : onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              size: 18,
-              color: color,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '$count',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _MiniCircleButton extends StatelessWidget {
   const _MiniCircleButton({

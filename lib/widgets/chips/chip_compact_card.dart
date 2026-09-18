@@ -22,7 +22,7 @@ class ChipCompactCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () async {

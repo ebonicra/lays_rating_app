@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:lays_rating/models/chip_type.dart';
 import 'package:lays_rating/widgets/filters/filter_card.dart';
 
-/// Сетка карточек фильтров: раскладывает в 2 колонки,
+/// Сетка карточек фильтров.
+///
+/// - В портрете — 2 колонки, в ландшафте — 3.
+/// - Если карточки не влезают — можно скроллить.
 class FilterGrid extends StatelessWidget {
   const FilterGrid({
     super.key,
@@ -18,39 +21,28 @@ class FilterGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // 2 колонки, 3 строки — рассчитываем aspect ratio под доступное место.
-        const crossAxisCount = 2;
-        const rowCount = 3;
-        const spacing = 10.0;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final crossAxisCount = isLandscape ? 3 : 2;
 
-        final cardWidth =
-            (constraints.maxWidth - spacing * (crossAxisCount - 1)) /
-                crossAxisCount;
-        final cardHeight =
-            (constraints.maxHeight - spacing * (rowCount - 1)) / rowCount;
-        final aspectRatio = cardWidth / cardHeight;
+    return GridView.builder(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 8,
+        childAspectRatio: 0.9,
+      ),
+      itemCount: types.length,
+      itemBuilder: (context, index) {
+        final type = types[index];
+        final isSelected = selected.contains(type.value);
 
-        return GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: spacing,
-            mainAxisSpacing: spacing,
-            childAspectRatio: aspectRatio,
-          ),
-          itemCount: types.length,
-          itemBuilder: (context, index) {
-            final type = types[index];
-            final isSelected = selected.contains(type.value);
-
-            return FilterCard(
-              type: type,
-              selected: isSelected,
-              onTap: () => onToggle(type),
-            );
-          },
+        return FilterCard(
+          type: type,
+          selected: isSelected,
+          onTap: () => onToggle(type),
         );
       },
     );

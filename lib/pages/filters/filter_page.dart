@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/chip_type.dart';
-import 'package:lays_rating/widgets/filters/compact_filter_card.dart';
+import 'package:lays_rating/widgets/filters/compact_filter_grid.dart';
 import 'package:lays_rating/widgets/filters/filter_grid.dart';
 
 import 'filters_controller.dart';
@@ -30,35 +30,15 @@ class _FilterPageState extends State<FilterPage> {
     super.dispose();
   }
 
-  Future<void> _toggleFilter(ChipType type) async {
+  Future<void> _run(Future<void> Function() action) async {
     try {
-      await _controller.toggleFilter(type);
+      await action();
     } catch (_) {
-      _showErrorSnack();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Не удалось сохранить настройки')),
+      );
     }
-  }
-
-  Future<void> _toggleRussiaOnly() async {
-    try {
-      await _controller.toggleRussiaOnly();
-    } catch (_) {
-      _showErrorSnack();
-    }
-  }
-
-  Future<void> _toggleAvailableOnly() async {
-    try {
-      await _controller.toggleAvailableOnly();
-    } catch (_) {
-      _showErrorSnack();
-    }
-  }
-
-  void _showErrorSnack() {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Не удалось сохранить настройки')),
-    );
   }
 
   @override
@@ -82,30 +62,19 @@ class _FilterPageState extends State<FilterPage> {
                   child: FilterGrid(
                     types: ChipType.values,
                     selected: _controller.selectedFilters,
-                    onToggle: _toggleFilter,
+                    onToggle: (type) => _run(
+                      () => _controller.toggleFilter(type),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Expanded(
-                      child: CompactFilterCard(
-                        icon: Icons.public_rounded,
-                        label: 'Только Россия',
-                        isSelected: _controller.russiaOnly,
-                        onTap: _toggleRussiaOnly,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: CompactFilterCard(
-                        icon: Icons.shopping_cart_rounded,
-                        label: 'В продаже',
-                        isSelected: _controller.availableOnly,
-                        onTap: _toggleAvailableOnly,
-                      ),
-                    ),
-                  ],
+                CompactFilterGrid(
+                  russiaOnly: _controller.russiaOnly,
+                  availableOnly: _controller.availableOnly,
+                  onRussiaOnlyTap: () => _run(_controller.toggleRussiaOnly),
+                  onAvailableOnlyTap: () => _run(
+                    _controller.toggleAvailableOnly,
+                  ),
                 ),
               ],
             ),

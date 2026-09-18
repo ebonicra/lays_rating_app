@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../models/user_filters.dart';
-import 'auth_service.dart';
+import 'package:lays_rating/models/user_filters.dart';
+import 'package:lays_rating/services/auth_service.dart';
 
 
 class FiltersService {

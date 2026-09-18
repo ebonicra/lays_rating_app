@@ -5,13 +5,8 @@ class UserFilters {
     required this.availableOnly,
   });
 
-  /// Названия фильтров (категорий), за которыми следит пользователь.
   final List<String> filters;
-
-  /// Только российские чипсы.
   final bool russiaOnly;
-
-  /// Только в наличии.
   final bool availableOnly;
 
   factory UserFilters.fromJson(Map<String, dynamic> json) {

@@ -37,7 +37,7 @@ class _FilterCardState extends State<FilterCard> {
         onTapCancel: () => setState(() => _pressed = false),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
             color: widget.selected
                 ? colorScheme.primaryContainer
@@ -55,16 +55,15 @@ class _FilterCardState extends State<FilterCard> {
             ],
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Icon(
                 widget.type.icon,
-                size: 50,
+                size: 55,
                 color: widget.selected
                     ? colorScheme.primary
                     : colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(height: 6),
               Text(
                 widget.type.title,
                 textAlign: TextAlign.center,
@@ -75,19 +74,17 @@ class _FilterCardState extends State<FilterCard> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 4),
               Text(
                 widget.type.description,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
                   color: colorScheme.onSurfaceVariant,
                   height: 1.2,
                 ),
               ),
-              const SizedBox(height: 6),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: widget.selected
@@ -97,7 +94,7 @@ class _FilterCardState extends State<FilterCard> {
                         style: TextStyle(
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w700,
-                          fontSize: 16,
+                          fontSize: 14,
                         ),
                       )
                     : Text(
@@ -105,7 +102,7 @@ class _FilterCardState extends State<FilterCard> {
                         key: const ValueKey('unselected'),
                         style: TextStyle(
                           color: colorScheme.onSurfaceVariant,
-                          fontSize: 16,
+                          fontSize: 14,
                         ),
                       ),
               ),
