@@ -121,7 +121,10 @@ class _CommentsPageState extends State<CommentsPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Не удалось добавить комментарий')),
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Не удалось добавить комментарий')
+          ),
         );
       }
     }

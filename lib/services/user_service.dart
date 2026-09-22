@@ -47,32 +47,58 @@ class UserService {
     String? username,
   }) async {
     final token = await AuthService.getToken();
-    if (token == null) throw Exception("No token");
+    if (token == null) throw Exception('Не авторизован');
 
     final body = <String, dynamic>{};
     if (displayName != null) body['display_name'] = displayName;
     if (username != null) body['username'] = username;
 
     final response = await http.put(
-      Uri.parse("${AuthService.baseUrl}/users/me"),
+      Uri.parse('${AuthService.baseUrl}/users/me'),
       headers: {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
       },
       body: jsonEncode(body),
     );
 
     if (response.statusCode != 200) {
-      try {
-        final data = jsonDecode(response.body);
-        throw Exception(data["detail"] ?? "Failed to update profile");
-      } catch (_) {
-        throw Exception("Failed to update profile");
-      }
+      throw Exception(_extractError(response, 'Не удалось сохранить профиль'));
     }
 
-    final user = User.fromJson(jsonDecode(response.body));
+    final user = User.fromJson(
+      jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>,
+    );
     currentUser = user;
     return user;
+  }
+
+  static Future<void> deleteAccount() async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('Не авторизован');
+
+    final response = await http
+        .delete(
+          Uri.parse('${AuthService.baseUrl}/users/me'),
+          headers: {'Authorization': 'Bearer $token'},
+        )
+        .timeout(const Duration(seconds: 15));
+
+    if (response.statusCode != 200) {
+      throw Exception(_extractError(response, 'Не удалось удалить аккаунт'));
+    }
+
+    currentUser = null;
+  }
+
+  static String _extractError(http.Response response, String fallback) {
+    try {
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      if (data is Map<String, dynamic>) {
+        final detail = data['detail'];
+        if (detail is String && detail.isNotEmpty) return detail;
+      }
+    } catch (_) {}
+    return fallback;
   }
 }

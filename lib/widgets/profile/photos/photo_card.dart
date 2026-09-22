@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:lays_rating/constants/photo_constants.dart';
-import 'package:lays_rating/models/user_photo.dart';
+import 'package:lays_rating/models/photo/photo.dart';
 import 'package:lays_rating/services/auth_service.dart';
 
-
-/// Карточка одного фото в карусели: изображение, счётчик лайков,
+/// Карточка одного фото в карусели: изображение и счётчик лайков.
 class PhotoCard extends StatelessWidget {
   const PhotoCard({
     super.key,
@@ -15,7 +14,7 @@ class PhotoCard extends StatelessWidget {
     required this.onCountTap,
   });
 
-  final UserPhoto photo;
+  final Photo photo;
   final VoidCallback onTap;
   final VoidCallback onLikeTap;
   final VoidCallback onCountTap;
@@ -72,7 +71,7 @@ class PhotoCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(

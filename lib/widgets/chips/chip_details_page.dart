@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/chip.dart';
 import 'package:lays_rating/models/chip_preference.dart';
-import 'package:lays_rating/pages/admin/edit_chip_page.dart';
 import 'package:lays_rating/services/chip_service.dart';
 import 'package:lays_rating/services/preference_service.dart';
 import 'package:lays_rating/services/user_service.dart';
 import 'package:lays_rating/widgets/chips/chip_details_view.dart';
 import 'package:lays_rating/widgets/chips/chip_admin_menu_button.dart';
+import 'package:lays_rating/widgets/profile/admin/chips/edit_chip_page.dart';
 
 
 class ChipDetailsPage extends StatefulWidget {
@@ -78,7 +78,10 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
       debugPrint('ChipDetailsPage.changeRating error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось сохранить оценку')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось сохранить оценку')
+        ),
       );
     }
   }
@@ -98,7 +101,10 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
       debugPrint('ChipDetailsPage.toggleFavorite error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось сохранить')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось сохранить')
+        ),
       );
     }
   }
@@ -118,19 +124,22 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
       debugPrint('ChipDetailsPage.toggleTried error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось сохранить')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось сохранить')
+        ),
       );
     }
   }
 
-  void _openAddChip() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const EditChipPage(chip: null),
-      ),
-    );
-  }
+  // void _openAddChip() {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (_) => const EditChipPage(chip: null),
+  //     ),
+  //   );
+  // }
 
   void _openEditChip() {
     Navigator.push(
@@ -155,7 +164,7 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
         actions: [
           if (_isAdmin)
             ChipAdminMenuButton(
-              onAdd: _openAddChip,
+              // onAdd: _openAddChip,
               onEdit: _openEditChip,
               onDelete: _deleteChip,
             ),

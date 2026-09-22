@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'package:lays_rating/models/user_photo.dart';
+import 'package:lays_rating/models/photo/photo_author.dart';
 import 'package:lays_rating/pages/profile/public_profile_page.dart';
 import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/services/photo_service.dart';
+import 'package:lays_rating/utils/initials.dart';
 
-// Bottom sheet со списком пользователей, лайкнувших фото.
+/// Шит со списком пользователей, лайкнувших фото.
 class LikersSheet extends StatefulWidget {
   const LikersSheet({
     super.key,
@@ -31,19 +32,18 @@ class _LikersSheetState extends State<LikersSheet> {
   Future<void> _loadLikers() async {
     try {
       final response = await PhotoService.getLikers(widget.photoId);
-      if (mounted) {
-        setState(() {
-          _users = response.users;
-          _isLoading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _users = response.users;
+        _isLoading = false;
+      });
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _users = [];
-          _isLoading = false;
-        });
-      }
+      debugPrint('LikersSheet._loadLikers error: $e');
+      if (!mounted) return;
+      setState(() {
+        _users = [];
+        _isLoading = false;
+      });
     }
   }
 
@@ -99,11 +99,12 @@ class _LikersSheetState extends State<LikersSheet> {
                       radius: 20,
                       backgroundImage: user.avatarUrl != null
                           ? NetworkImage(
-                              '${AuthService.baseUrl}${user.avatarUrl}')
+                              '${AuthService.baseUrl}${user.avatarUrl}',
+                            )
                           : null,
                       child: user.avatarUrl == null
                           ? Text(
-                              user.displayName.substring(0, 1).toUpperCase(),
+                              initialOf(user.displayName),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),

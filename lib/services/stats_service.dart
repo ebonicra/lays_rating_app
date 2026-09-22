@@ -2,68 +2,94 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../models/follow_user.dart';
-import '../models/stat_chip.dart';
-import '../models/user_stats.dart';
-import 'auth_service.dart';
-import 'user_service.dart';
+import 'package:lays_rating/models/stats/stats_chip.dart';
+import 'package:lays_rating/models/stats/stats_follow.dart';
+import 'package:lays_rating/models/stats/stats_user.dart';
+import 'package:lays_rating/services/auth_service.dart';
 
 class StatsService {
   StatsService._();
+  static const Duration _timeout = Duration(seconds: 15);
 
-  // ===== ПУБЛИЧНЫЕ МЕТОДЫ =====
-
-  static Future<UserStats> getUserStats(int userId) async {
+  static Future<StatsUser> getUserStats(int userId) async {
     final json = await _getJson('/stats/$userId');
-    return UserStats.fromJson(json as Map<String, dynamic>);
+    return StatsUser.fromJson(json as Map<String, dynamic>);
   }
 
-  static Future<UserStats> getMyStats() async {
-    final userId = UserService.currentUser?.id;
-    if (userId == null) throw Exception('User not loaded');
-    return getUserStats(userId);
-  }
+  static Future<List<StatsChip>> getFavoriteChips(int userId) =>
+      _getList('/stats/$userId/favorites', StatsChip.fromJson);
 
-  static Future<List<StatChip>> getFavoriteChips(int userId) =>
-      _getList('/stats/$userId/favorites', StatChip.fromJson);
+  static Future<List<StatsChip>> getTriedChips(int userId) =>
+      _getList('/stats/$userId/tried', StatsChip.fromJson);
 
-  static Future<List<StatChip>> getTriedChips(int userId) =>
-      _getList('/stats/$userId/tried', StatChip.fromJson);
+  static Future<List<StatsChip>> getRatings(int userId) =>
+      _getList(
+        '/stats/$userId/ratings', 
+        StatsChip.fromJson
+      );
 
-  static Future<List<StatChip>> getRatings(int userId) =>
-      _getList('/stats/$userId/ratings', StatChip.fromJson);
+  static Future<List<StatsChip>> getCommentedChips(int userId) =>
+      _getList(
+        '/stats/$userId/commented-chips', 
+        StatsChip.fromJson
+      );
 
-  static Future<List<StatChip>> getCommentedChips(int userId) =>
-      _getList('/stats/$userId/commented-chips', StatChip.fromJson);
+  static Future<List<StatsFollow>> getFollowers(int userId) =>
+      _getList(
+        '/follows/$userId/followers',
+        StatsFollow.fromJson,
+        arrayKey: 'users',
+      );
 
-  static Future<List<FollowUser>> getFriendsAverageRating(int userId) =>
-      _getList('/stats/$userId/friends-average-rating', FollowUser.fromJson);
+  static Future<List<StatsFollow>> getFollowing(int userId) =>
+      _getList(
+        '/follows/$userId/following',
+        StatsFollow.fromJson,
+        arrayKey: 'users',
+      );
 
-  // ===== ПРИВАТНЫЕ ХЕЛПЕРЫ =====
+  static Future<List<StatsFollow>> getFriendsAverageRating(int userId) =>
+      _getList(
+        '/stats/$userId/friends-average-rating',
+        StatsFollow.fromJson,
+      );
 
-  /// GET-запрос, возвращает декодированный JSON (Map или List).
-  static Future<dynamic> _getJson(String path) async {
+  static Future<dynamic> _getJson(
+    String path, {
+    Map<String, String>? queryParams,
+  }) async {
     final token = await AuthService.getToken();
-    if (token == null) throw Exception('No token');
+    if (token == null) throw Exception('Не авторизован');
 
+    var uri = Uri.parse('${AuthService.baseUrl}$path');
+    if (queryParams != null) {
+      uri = uri.replace(queryParameters: queryParams);
+    }
     final response = await http
-        .get(
-          Uri.parse('${AuthService.baseUrl}$path'),
-          headers: {'Authorization': 'Bearer $token'},
-        )
-        .timeout(const Duration(seconds: 15));
+        .get(uri, headers: {'Authorization': 'Bearer $token'})
+        .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to load: $path (${response.statusCode})');
+      throw Exception('Ошибка запроса: $path (${response.statusCode})');
     }
-
-    return jsonDecode(response.body);
+    return jsonDecode(utf8.decode(response.bodyBytes));
   }
 
-  /// GET-запрос, возвращает список моделей, декодированных через [fromJson].
-  static Future<List<T>> _getList<T>(String path, T Function(Map<String, dynamic>) fromJson) async {
-    final json = await _getJson(path);
-    final list = json as List;
+  static Future<List<T>> _getList<T>(
+    String path,
+    T Function(Map<String, dynamic>) fromJson, {
+    Map<String, String>? queryParams,
+    String? arrayKey,
+  }) async {
+    final json = await _getJson(path, queryParams: queryParams);
+
+    final List list;
+    if (arrayKey != null) {
+      list = (json as Map<String, dynamic>)[arrayKey] as List;
+    } else {
+      list = json as List;
+    }
+
     return list
         .map((item) => fromJson(item as Map<String, dynamic>))
         .toList();

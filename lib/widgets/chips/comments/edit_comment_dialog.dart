@@ -65,7 +65,10 @@ class _EditCommentDialogState extends State<EditCommentDialog> {
       if (!mounted) return;
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось обновить')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось обновить')
+        ),
       );
     }
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:lays_rating/models/follow_user.dart';
+import 'package:lays_rating/models/user_brief.dart';
 import 'package:lays_rating/services/follow_service.dart';
 
 import 'package:lays_rating/widgets/friends/friends_list.dart';
@@ -20,8 +20,8 @@ class FriendsPage extends StatefulWidget {
 }
 
 class _FriendsPageState extends State<FriendsPage> {
-  late Future<List<FollowUser>> _followingFuture;
-  late Future<List<FollowUser>> _followersFuture;
+  late Future<List<UserBrief>> _followingFuture;
+  late Future<List<UserBrief>> _followersFuture;
 
   @override
   void initState() {

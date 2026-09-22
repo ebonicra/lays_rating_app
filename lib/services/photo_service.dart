@@ -1,105 +1,106 @@
-// services/photo_service.dart
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 
-import '../models/user_photo.dart';
-import 'auth_service.dart';
-
+import 'package:lays_rating/models/photo/photo.dart';
+import 'package:lays_rating/models/photo/photo_likers.dart';
+import 'package:lays_rating/models/photo/photo_list.dart';
+import 'package:lays_rating/models/photo/photo_reaction.dart';
+import 'package:lays_rating/services/auth_service.dart';
 
 class PhotoService {
-  
-  /// Получить все фото пользователя
-  static Future<PhotoListResponse> getUserPhotos(int userId) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception('Не авторизован');
+  PhotoService._();
+  static const Duration _timeout = Duration(seconds: 15);
 
-    final response = await http.get(
-      Uri.parse('${AuthService.baseUrl}/photos/user/$userId'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(utf8.decode(response.bodyBytes));
-      return PhotoListResponse.fromJson(data);
-    } else {
-      throw Exception('Не удалось загрузить фото');
-    }
+  static Future<PhotoList> getUserPhotos(int userId) async {
+    final json = await _getJson('/photos/user/$userId');
+    return PhotoList.fromJson(json as Map<String, dynamic>);
   }
 
-  /// Загрузить фото
-  static Future<UserPhoto> uploadPhoto(String filePath) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception('Не авторизован');
-
+  static Future<Photo> uploadPhoto(String filePath) async {
+    final token = await _getToken();
     final uri = Uri.parse('${AuthService.baseUrl}/photos/upload');
     final request = http.MultipartRequest('POST', uri)
       ..headers['Authorization'] = 'Bearer $token'
       ..files.add(await http.MultipartFile.fromPath('file', filePath));
 
     final response = await request.send();
-
+    final body = await response.stream.bytesToString();
     if (response.statusCode == 200) {
-      final data = jsonDecode(await response.stream.bytesToString());
-      return UserPhoto.fromJson(data);
-    } else if (response.statusCode == 400) {
-      final data = jsonDecode(await response.stream.bytesToString());
-      throw Exception(data['detail'] ?? 'Ошибка загрузки');
-    } else {
-      throw Exception('Не удалось загрузить фото');
+      return Photo.fromJson(jsonDecode(body) as Map<String, dynamic>);
     }
+
+    if (response.statusCode == 400) {
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      throw Exception(data['detail'] ?? 'Ошибка загрузки');
+    }
+    throw Exception('Не удалось загрузить фото (${response.statusCode})');
   }
 
-  /// Удалить фото
   static Future<void> deletePhoto(int photoId) async {
+    await _deleteJson('/photos/$photoId');
+  }
+
+  static Future<PhotoReaction> toggleLike(int photoId) async {
+    final json = await _postJson('/photos/$photoId/like');
+    return PhotoReaction.fromJson(json as Map<String, dynamic>);
+  }
+
+  static Future<PhotoLikers> getLikers(int photoId) async {
+    final json = await _getJson('/photos/$photoId/likes');
+    return PhotoLikers.fromJson(json as Map<String, dynamic>);
+  }
+
+  static Future<String> _getToken() async {
     final token = await AuthService.getToken();
     if (token == null) throw Exception('Не авторизован');
+    return token;
+  }
 
-    final response = await http.delete(
-      Uri.parse('${AuthService.baseUrl}/photos/$photoId'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+  static Future<dynamic> _getJson(String path) async {
+    final token = await _getToken();
+
+    final response = await http
+        .get(
+          Uri.parse('${AuthService.baseUrl}$path'),
+          headers: {'Authorization': 'Bearer $token'},
+        )
+        .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      throw Exception('Не удалось удалить фото');
+      throw Exception('Ошибка запроса: $path (${response.statusCode})');
     }
+    return jsonDecode(utf8.decode(response.bodyBytes));
   }
 
-  /// Поставить/убрать лайк
-  static Future<PhotoReactionResponse> toggleLike(int photoId) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception('Не авторизован');
+  static Future<dynamic> _postJson(String path) async {
+    final token = await _getToken();
 
-    final response = await http.post(
-      Uri.parse('${AuthService.baseUrl}/photos/$photoId/like'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+    final response = await http
+        .post(
+          Uri.parse('${AuthService.baseUrl}$path'),
+          headers: {'Authorization': 'Bearer $token'},
+        )
+        .timeout(_timeout);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(utf8.decode(response.bodyBytes));
-      return PhotoReactionResponse.fromJson(data);
-    } else {
-      throw Exception('Не удалось поставить лайк');
+    if (response.statusCode != 200) {
+      throw Exception('Ошибка запроса: $path (${response.statusCode})');
     }
+    return jsonDecode(utf8.decode(response.bodyBytes));
   }
 
-  /// Получить список тех, кто лайкнул
-  static Future<PhotoLikersResponse> getLikers(int photoId) async {
-    final token = await AuthService.getToken();
-    if (token == null) throw Exception('Не авторизован');
+  static Future<void> _deleteJson(String path) async {
+    final token = await _getToken();
 
-    final response = await http.get(
-      Uri.parse('${AuthService.baseUrl}/photos/$photoId/likes'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+    final response = await http
+        .delete(
+          Uri.parse('${AuthService.baseUrl}$path'),
+          headers: {'Authorization': 'Bearer $token'},
+        )
+        .timeout(_timeout);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(utf8.decode(response.bodyBytes));
-      return PhotoLikersResponse.fromJson(data);
-    } else {
-      throw Exception('Не удалось загрузить список');
+    if (response.statusCode != 200) {
+      throw Exception('Ошибка запроса: $path (${response.statusCode})');
     }
   }
 }

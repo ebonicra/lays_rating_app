@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Плашка «Подписан на вас» / «Не подписан на вас».
+// Плашка «Подписан на вас» / «Не подписан на вас».
 class ProfileFollowsMeBadge extends StatelessWidget {
   const ProfileFollowsMeBadge({
     super.key,

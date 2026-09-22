@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// Диалог подтверждения удаления аккаунта.
+/// Диалог подтверждения удаления аккаунта
 class ProfileDeleteAccountDialog extends StatelessWidget {
   const ProfileDeleteAccountDialog({super.key});
 
@@ -13,11 +13,18 @@ class ProfileDeleteAccountDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return AlertDialog(
-      title: const Text('Удалить аккаунт?'),
+      title: const Text(
+        'Удалить аккаунт?',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+      ),
       content: const Text(
-        'Это действие нельзя отменить. '
-        'Все оценки, комментарии и подписки будут удалены.',
+        'Все оценки, комментарии и подписки будут удалены. '
+        'Это действие нельзя отменить.',
+        textAlign: TextAlign.center,
       ),
       actions: [
         Row(
@@ -30,10 +37,11 @@ class ProfileDeleteAccountDialog extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: TextButton(
+              child: FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error,
+                style: FilledButton.styleFrom(
+                  backgroundColor: colorScheme.error,
+                  foregroundColor: colorScheme.onError,
                 ),
                 child: const Text('Удалить'),
               ),

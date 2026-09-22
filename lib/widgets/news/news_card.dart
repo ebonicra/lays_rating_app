@@ -148,7 +148,10 @@ class _NewsCardState extends State<NewsCard> {
       debugPrint('NewsCard._handleVote error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось проголосовать')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось проголосовать')
+        ),
       );
     }
   }
@@ -180,7 +183,10 @@ class _NewsCardState extends State<NewsCard> {
       debugPrint('NewsCard._removeVote error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось отменить голос')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось отменить голос')
+        ),
       );
     }
   }
@@ -202,7 +208,10 @@ class _NewsCardState extends State<NewsCard> {
       debugPrint('NewsCard._deleteNews error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось удалить новость')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось удалить новость')
+        ),
       );
     }
   }

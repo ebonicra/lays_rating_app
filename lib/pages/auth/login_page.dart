@@ -31,7 +31,10 @@ class _LoginPageState extends State<LoginPage> {
 
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Введите логин и пароль')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Введите логин и пароль')
+        ),
       );
       return;
     }
@@ -48,7 +51,10 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка входа: $e')),
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Ошибка входа: $e')
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

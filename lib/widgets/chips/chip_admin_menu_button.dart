@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 class ChipAdminMenuButton extends StatelessWidget {
   const ChipAdminMenuButton({
     super.key,
-    required this.onAdd,
+    // required this.onAdd,
     required this.onEdit,
     required this.onDelete,
   });
 
-  final VoidCallback onAdd;
+  // final VoidCallback onAdd;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -25,9 +25,9 @@ class ChipAdminMenuButton extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 170),
       onSelected: (value) {
         switch (value) {
-          case 'add':
-            onAdd();
-            break;
+          // case 'add':
+          //   onAdd();
+          //   break;
           case 'edit':
             onEdit();
             break;

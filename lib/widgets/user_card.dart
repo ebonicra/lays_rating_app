@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:lays_rating/models/user.dart';
-import 'package:lays_rating/models/follow_user.dart';
+import 'package:lays_rating/models/user_brief.dart';
 import 'package:lays_rating/services/follow_service.dart';
 import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/pages/profile/public_profile_page.dart';
 
 class UserCard extends StatefulWidget {
-  final FollowUser user;
+  final UserBrief user;
 
   const UserCard({
     super.key,
@@ -56,7 +55,10 @@ class UserCardState extends State<UserCard> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Не удалось выполнить действие')),
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Не удалось выполнить действие')
+          ),
         );
       }
     }

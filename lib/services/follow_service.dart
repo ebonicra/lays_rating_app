@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../models/follow_user.dart';
+import '../models/user_brief.dart';
 import '../models/user.dart';
 import 'auth_service.dart';
 
@@ -39,7 +39,7 @@ class FollowService {
     }
   }
 
-  static Future<List<FollowUser>> getFollowers({
+  static Future<List<UserBrief>> getFollowers({
     required int userId,
     int page = 1,
     int perPage = 20,
@@ -64,11 +64,11 @@ class FollowService {
 
     final data = jsonDecode(utf8.decode(response.bodyBytes));
     return (data['users'] as List)
-        .map((u) => FollowUser.fromJson(u))
+        .map((u) => UserBrief.fromJson(u))
         .toList();
   }
 
-  static Future<List<FollowUser>> getFollowing({
+  static Future<List<UserBrief>> getFollowing({
     required int userId,
     int page = 1,
     int perPage = 20,
@@ -93,7 +93,7 @@ class FollowService {
 
     final data = jsonDecode(utf8.decode(response.bodyBytes));
     return (data['users'] as List)
-        .map((u) => FollowUser.fromJson(u))
+        .map((u) => UserBrief.fromJson(u))
         .toList();
   }
 

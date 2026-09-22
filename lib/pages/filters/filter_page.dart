@@ -36,7 +36,10 @@ class _FilterPageState extends State<FilterPage> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось сохранить настройки')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось сохранить настройки')
+        ),
       );
     }
   }

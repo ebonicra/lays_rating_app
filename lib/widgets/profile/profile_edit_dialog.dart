@@ -8,7 +8,7 @@ import 'package:lays_rating/services/avatar_service.dart';
 import 'package:lays_rating/services/user_service.dart';
 import 'package:lays_rating/utils/initials.dart';
 
-// Диалог редактирования профиля: аватар, имя, username.
+/// Диалог редактирования профиля: аватар, имя, username.
 class ProfileEditDialog extends StatefulWidget {
   const ProfileEditDialog({
     super.key,
@@ -31,18 +31,9 @@ class ProfileEditDialog extends StatefulWidget {
 class _ProfileEditDialogState extends State<ProfileEditDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _usernameController;
-
-  /// Текущее изображение аватара для отображения.
-  /// null — нет аватара, показываем инициал.
   ImageProvider? _avatarImage;
-
-  /// Путь к локально выбранному файлу (если пользователь выбрал новый).
-  /// null — либо не менял, либо выбрал удаление.
   String? _localAvatarPath;
-
-  /// Был ли удалён аватар (пользователь нажал «Удалить фото»).
   bool _avatarDeleted = false;
-
   bool _isSaving = false;
 
   @override
@@ -62,13 +53,8 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
 
   ImageProvider? _initialAvatarImage(String? avatarUrl) {
     if (avatarUrl == null) return null;
-    if (avatarUrl.startsWith('/')) {
-      return NetworkImage('${AuthService.baseUrl}$avatarUrl');
-    }
-    if (avatarUrl.startsWith('http')) {
-      return NetworkImage(avatarUrl);
-    }
-    return null;
+    if (avatarUrl.startsWith('http')) return NetworkImage(avatarUrl);
+    return NetworkImage('${AuthService.baseUrl}$avatarUrl');
   }
 
   Future<void> _pickPhoto() async {
@@ -90,6 +76,8 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
   }
 
   void _showAvatarSheet() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) {
@@ -105,8 +93,11 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Удалить фото'),
+              leading: Icon(Icons.delete, color: colorScheme.error),
+              title: Text(
+                'Удалить фото',
+                style: TextStyle(color: colorScheme.error),
+              ),
               onTap: () {
                 Navigator.pop(sheetContext);
                 _deletePhoto();
@@ -124,7 +115,10 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
 
     if (name.isEmpty || username.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Заполните имя и username')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Заполните имя и username')
+        ),
       );
       return;
     }
@@ -132,14 +126,12 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
     setState(() => _isSaving = true);
 
     try {
-      // 1. Аватар
       if (_localAvatarPath != null) {
         await AvatarService.uploadLocalAvatar(_localAvatarPath!);
       } else if (_avatarDeleted && widget.user.avatarUrl != null) {
         await AvatarService.deleteAvatar();
       }
 
-      // 2. Имя и username
       await UserService.updateProfile(
         displayName: name,
         username: username,
@@ -148,10 +140,15 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
+      debugPrint('ProfileEditDialog._save error: $e');
       if (!mounted) return;
       setState(() => _isSaving = false);
+
+      final message = e.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e')),
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(message)),
       );
     }
   }
@@ -164,11 +161,11 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
       title: const Text(
         'Редактировать профиль',
         textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Аватар
           Center(
             child: GestureDetector(
               onTap: _isSaving ? null : _showAvatarSheet,
@@ -182,7 +179,7 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
                   ),
                 ),
                 child: CircleAvatar(
-                  radius: 40,
+                  radius: 60,
                   backgroundImage: _avatarImage,
                   child: _avatarImage == null
                       ? Text(
@@ -198,48 +195,73 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Имя
-          TextField(
+          TextFormField(
             controller: _nameController,
             enabled: !_isSaving,
             textCapitalization: TextCapitalization.words,
+            maxLength: 20,
             decoration: InputDecoration(
               labelText: 'Имя',
+              counterText: '',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
+            validator: (v) {
+              final value = v?.trim() ?? '';
+              if (value.isEmpty) return 'Введите имя';
+              if (value.length > 20) return 'Максимум 20 символов';
+              return null;
+            },
           ),
           const SizedBox(height: 12),
-
-          // Username
-          TextField(
+          TextFormField(
             controller: _usernameController,
             enabled: !_isSaving,
             decoration: InputDecoration(
               labelText: 'Username',
+              counterText: '',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
+            validator: (v) {
+              final value = v?.trim() ?? '';
+              if (value.isEmpty) return 'Введите username';
+              if (value.length > 20) return 'Максимум 20 символов';
+              return null;
+            },
           ),
         ],
       ),
       actions: [
-        TextButton(
-          onPressed: _isSaving ? null : () => Navigator.pop(context, false),
-          child: const Text('Отмена'),
-        ),
-        ElevatedButton(
-          onPressed: _isSaving ? null : _save,
-          child: _isSaving
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Сохранить'),
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed:
+                    _isSaving ? null : () => Navigator.pop(context, false),
+                child: const Text('Отмена'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: FilledButton(
+                onPressed: _isSaving ? null : _save,
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text(
+                        'Сохранить',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12),
+                      ),
+              ),
+            ),
+          ],
         ),
       ],
     );

@@ -54,7 +54,10 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e')),
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Ошибка: $e')
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

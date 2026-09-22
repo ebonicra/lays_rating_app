@@ -11,6 +11,7 @@ class FullScreenGallery extends StatefulWidget {
     this.actions = const [],
     this.bottomBar,
     this.onClose,
+    this.onIndexChanged,
     this.enableSwipeToDismiss = true,
   });
 
@@ -19,6 +20,7 @@ class FullScreenGallery extends StatefulWidget {
   final List<Widget> actions;
   final Widget? bottomBar;
   final VoidCallback? onClose;
+  final ValueChanged<int>? onIndexChanged;
   final bool enableSwipeToDismiss;
 
   @override
@@ -79,7 +81,10 @@ class _FullScreenGalleryState extends State<FullScreenGallery> {
     final gallery = PhotoViewGallery.builder(
       pageController: _controller,
       itemCount: widget.imageUrls.length,
-      onPageChanged: (index) => setState(() => _currentIndex = index),
+      onPageChanged: (index) {
+        setState(() => _currentIndex = index);
+        widget.onIndexChanged?.call(index);   // ← добавить
+      },
       builder: (context, index) {
         return PhotoViewGalleryPageOptions(
           imageProvider: NetworkImage(widget.imageUrls[index]),

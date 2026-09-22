@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lays_rating/theme/app_theme_scope.dart';
 import 'package:lays_rating/theme/app_theme_state.dart';
 import 'package:lays_rating/pages/auth/auth_check_page.dart';
+import 'package:lays_rating/utils/route_observer.dart';
 
 
 class LaysApp extends StatefulWidget {
@@ -33,6 +34,7 @@ class _LaysAppState extends State<LaysApp> {
           return MaterialApp(
             title: 'Lays Rating',
             debugShowCheckedModeBanner: false,
+            navigatorObservers: [routeObserver],
             themeMode: _themeState.themeMode,
             theme: light,
             darkTheme: dark,

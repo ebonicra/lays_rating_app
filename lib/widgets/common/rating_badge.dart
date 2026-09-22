@@ -5,11 +5,11 @@ class RatingBadge extends StatelessWidget {
   const RatingBadge({
     super.key,
     required this.rating,
-    this.iconSize = 18,
-    this.fontSize = 15,
+    this.iconSize = 14,
+    this.fontSize = 12,
   });
 
-  final int rating;
+  final num rating;
   final double iconSize;
   final double fontSize;
 
@@ -40,7 +40,7 @@ class RatingBadge extends StatelessWidget {
           Icon(Icons.star_rounded, color: Colors.white, size: iconSize),
           const SizedBox(width: 4),
           Text(
-            '$rating',
+            _formatRating(),   // ← форматирование
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -52,7 +52,13 @@ class RatingBadge extends StatelessWidget {
     );
   }
 
-  List<Color> _ratingColors(int rating) {
+  String _formatRating() {
+    if (rating is int) return '$rating';
+    if (rating is double && rating == rating.toInt()) return '${rating.toInt()}';
+    return (rating as double).toStringAsFixed(1);
+  }
+
+  List<Color> _ratingColors(num rating) {
     if (rating >= 5) return const [Color(0xFF00E676), Color(0xFF1B5E20)];
     if (rating >= 4) return const [Color(0xFFAED581), Color(0xFF00E676)];
     if (rating >= 3) return const [Color(0xFFFFC107), Color(0xFFFF9800)];

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'package:lays_rating/models/user_photo.dart';
+import 'package:lays_rating/models/photo/photo.dart';
 import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/services/photo_service.dart';
 import 'package:lays_rating/utils/date_formatter.dart';
 import 'package:lays_rating/widgets/common/full_screen_gallery.dart';
 
-import 'likers_sheet.dart';
+import 'package:lays_rating/widgets/profile/photos/likers_sheet.dart';
 
 /// Полноэкранный просмотр фотографий профиля.
 class FullScreenPhotoViewer extends StatefulWidget {
@@ -15,22 +15,24 @@ class FullScreenPhotoViewer extends StatefulWidget {
     required this.photos,
     required this.initialIndex,
     required this.isMyProfile,
+    required this.isAdmin,
     required this.onPhotoUpdated,
   });
 
-  final List<UserPhoto> photos;
+  final List<Photo> photos;
   final int initialIndex;
   final bool isMyProfile;
+  final bool isAdmin;
 
   /// Вызывается при изменении лайка — родитель обновляет свою копию.
-  final ValueChanged<UserPhoto> onPhotoUpdated;
+  final ValueChanged<Photo> onPhotoUpdated;
 
   @override
   State<FullScreenPhotoViewer> createState() => _FullScreenPhotoViewerState();
 }
 
 class _FullScreenPhotoViewerState extends State<FullScreenPhotoViewer> {
-  late List<UserPhoto> _photos;
+  late List<Photo> _photos;
   late int _currentIndex;
   int? _loadingPhotoId;
   bool _wasDeleted = false;
@@ -42,7 +44,7 @@ class _FullScreenPhotoViewerState extends State<FullScreenPhotoViewer> {
     _photos = List.from(widget.photos);
   }
 
-  UserPhoto get _currentPhoto => _photos[_currentIndex];
+  Photo get _currentPhoto => _photos[_currentIndex];
 
   void _close() {
     Navigator.pop(context, _wasDeleted);
@@ -73,7 +75,10 @@ class _FullScreenPhotoViewerState extends State<FullScreenPhotoViewer> {
       if (!mounted) return;
       setState(() => _loadingPhotoId = null);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось поставить лайк')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось поставить лайк')
+        ),
       );
     }
   }
@@ -85,7 +90,7 @@ class _FullScreenPhotoViewerState extends State<FullScreenPhotoViewer> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.6,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.6,
       ),
       builder: (_) => LikersSheet(photoId: _currentPhoto.id),
     );
@@ -109,32 +114,7 @@ class _FullScreenPhotoViewerState extends State<FullScreenPhotoViewer> {
               const SizedBox(width: 8),
               Expanded(
                 child: TextButton(
-                  onPressed: () async {
-                    try {
-                      await PhotoService.deletePhoto(_currentPhoto.id);
-                      if (!mounted) return;
-
-                      Navigator.pop(dialogContext);
-
-                      setState(() {
-                        _photos.removeAt(_currentIndex);
-                        _wasDeleted = true;
-
-                        if (_photos.isEmpty) {
-                          _close();
-                          return;
-                        }
-                        _currentIndex =
-                            _currentIndex.clamp(0, _photos.length - 1);
-                      });
-                    } catch (e) {
-                      debugPrint('FullScreenPhotoViewer delete error: $e');
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Не удалось удалить')),
-                      );
-                    }
-                  },
+                  onPressed: () => _deletePhoto(dialogContext),
                   style: TextButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.error,
                   ),
@@ -148,6 +128,39 @@ class _FullScreenPhotoViewerState extends State<FullScreenPhotoViewer> {
     );
   }
 
+  Future<void> _deletePhoto(BuildContext dialogContext) async {
+    final photoId = _currentPhoto.id;
+
+    try {
+      await PhotoService.deletePhoto(photoId);
+      if (!mounted) return;
+
+      Navigator.pop(dialogContext);
+
+      setState(() {
+        _photos.removeAt(_currentIndex);
+        _wasDeleted = true;
+
+        if (_photos.isNotEmpty) {
+          _currentIndex = _currentIndex.clamp(0, _photos.length - 1);
+        }
+      });
+
+      if (_photos.isEmpty) {
+        _close();
+      }
+    } catch (e) {
+      debugPrint('FullScreenPhotoViewer._deletePhoto error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось удалить')
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_photos.isEmpty) {
@@ -159,8 +172,10 @@ class _FullScreenPhotoViewerState extends State<FullScreenPhotoViewer> {
         .toList();
 
     return FullScreenGallery(
+      key: ValueKey(_photos.length),
       imageUrls: imageUrls,
       initialIndex: _currentIndex,
+      onIndexChanged: (index) => setState(() => _currentIndex = index),
       onClose: _close,
       actions: [
         IconButton(
@@ -168,10 +183,15 @@ class _FullScreenPhotoViewerState extends State<FullScreenPhotoViewer> {
           icon: const Icon(Icons.people_rounded),
           tooltip: 'Кто лайкнул',
         ),
-        if (widget.isMyProfile)
+        if (widget.isMyProfile || widget.isAdmin)
           IconButton(
             onPressed: _showDeleteDialog,
-            icon: const Icon(Icons.delete_outline),
+            icon: Icon(
+              Icons.delete_outline,
+              color: widget.isMyProfile
+                  ? null
+                  : Theme.of(context).colorScheme.error,
+            ),
           ),
       ],
       bottomBar: _buildBottomBar(),
@@ -180,7 +200,6 @@ class _FullScreenPhotoViewerState extends State<FullScreenPhotoViewer> {
 
   Widget _buildBottomBar() {
     final photo = _currentPhoto;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -219,7 +238,7 @@ class _FullScreenPhotoViewerState extends State<FullScreenPhotoViewer> {
               child: Text(
                 formatShortDate(photo.createdAt),
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),

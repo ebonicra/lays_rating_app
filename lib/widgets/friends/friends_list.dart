@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:lays_rating/models/follow_user.dart';
+import 'package:lays_rating/models/user_brief.dart';
 import 'package:lays_rating/widgets/user_card.dart';
 
 /// Список пользователей с загрузкой, обработкой ошибок, пустого состояния
@@ -13,7 +13,7 @@ class FriendsList extends StatelessWidget {
     required this.onRefresh,
   });
 
-  final Future<List<FollowUser>> future;
+  final Future<List<UserBrief>> future;
   final String emptyText;
   final Future<void> Function() onRefresh;
 
@@ -21,7 +21,7 @@ class FriendsList extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return FutureBuilder<List<FollowUser>>(
+    return FutureBuilder<List<UserBrief>>(
       future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

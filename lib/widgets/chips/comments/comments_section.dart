@@ -92,7 +92,10 @@ class _CommentsSectionState extends State<CommentsSection> {
       debugPrint('CommentsSection._createComment error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось добавить комментарий')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось добавить комментарий')
+        ),
       );
     }
   }

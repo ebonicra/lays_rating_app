@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../../models/user.dart';
-import '../../models/user_stats.dart';
-
-import '../../services/auth_service.dart';
-import '../../services/user_service.dart';
-import '../../services/stats_service.dart';
-import '../auth/login_page.dart';
+import 'package:lays_rating/pages/auth/login_page.dart';
+import 'package:lays_rating/services/user_service.dart';
+import 'package:lays_rating/pages/profile/profile_controller.dart';
 
 import 'package:lays_rating/widgets/profile/photos/photo_carousel.dart';
-import 'package:lays_rating/widgets/profile/profile_admin_card.dart';
-import 'package:lays_rating/widgets/profile/profile_appearance_card.dart';
+import 'package:lays_rating/widgets/profile/admin/profile_admin_card.dart';
+import 'package:lays_rating/widgets/profile/appearance/profile_appearance_card.dart';
 import 'package:lays_rating/widgets/profile/profile_delete_account_dialog.dart';
 import 'package:lays_rating/widgets/profile/profile_edit_dialog.dart';
 import 'package:lays_rating/widgets/profile/profile_friends_card.dart';
 import 'package:lays_rating/widgets/profile/profile_header.dart';
 import 'package:lays_rating/widgets/profile/profile_logout_button.dart';
 import 'package:lays_rating/widgets/profile/profile_menu_button.dart';
-import 'package:lays_rating/widgets/profile/profile_stats_carousel.dart';
+import 'package:lays_rating/widgets/profile/stats/profile_stats_carousel.dart';
+import 'package:lays_rating/utils/route_observer.dart';
 
 
 class ProfilePage extends StatefulWidget {
@@ -27,52 +24,47 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
-  User? user;
-  UserStats? stats;
-  bool isLoading = true;
+class _ProfilePageState extends State<ProfilePage> with RouteAware {
+  late final ProfileController _controller;
 
   @override
   void initState() {
     super.initState();
-    _loadAll();
+    _controller = ProfileController();
+    _controller.load();
   }
 
-  Future<void> _loadAll() async {
-    await loadUser();
-    await loadStats();
-  }
-
-  Future<void> loadUser() async {
-    try {
-      final result = await UserService.getCurrentUser();
-      if (!mounted) return;
-      setState(() {
-        user = result;
-        isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('loadUser error: $e');
-      if (!mounted) return;
-      setState(() => isLoading = false);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);   // ←
     }
   }
 
-  Future<void> loadStats() async {
-    if (user == null) return;
-    try {
-      final result = await StatsService.getUserStats(user!.id);
-      if (!mounted) return;
-      setState(() => stats = result);
-    } catch (e, st) {
-      debugPrint('loadStats error: $e');
-      debugPrintStack(stackTrace: st);
-    }
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    _controller.dispose();
+    super.dispose();
   }
 
-  Future<void> logout() async {
-    await AuthService.logout();
-    UserService.currentUser = null;
+  @override
+  void didPopNext() {
+    _controller.reloadStats();
+  }
+
+  Future<void> refresh() async {
+    await _controller.reloadUser();
+    await _controller.reloadStats();
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await confirmLogout(context);
+    if (!confirmed || !mounted) return;
+
+    await _controller.logout();
     if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
@@ -83,9 +75,12 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _showEditProfileDialog() async {
-    final saved = await ProfileEditDialog.show(context, user!);
+    final user = _controller.user;
+    if (user == null) return;
+
+    final saved = await ProfileEditDialog.show(context, user);
     if (saved == true && mounted) {
-      await loadUser();
+      await _controller.reloadUser();
     }
   }
 
@@ -93,19 +88,45 @@ class _ProfilePageState extends State<ProfilePage> {
     final confirmed = await ProfileDeleteAccountDialog.show(context);
     if (confirmed != true || !mounted) return;
 
-    // TODO: вызвать API удаления аккаунта, потом logout
-  }
+    try {
+      await UserService.deleteAccount();
+      if (!mounted) return;
 
+      await _controller.logout();
+      if (!mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
+      );
+    } catch (e) {
+      debugPrint('ProfilePage._showDeleteAccountDialog error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось удалить аккаунт')
+        ),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => _buildBody(context),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    if (_controller.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final user = _controller.user;
     if (user == null) {
-      return const Center(
-        child: Text('Не удалось загрузить профиль'),
-      );
+      return const Center(child: Text('Не удалось загрузить профиль'));
     }
 
     return Scaffold(
@@ -124,25 +145,25 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             const SizedBox(height: 10),
 
-            ProfileHeader(user: user!),
+            ProfileHeader(user: user),
             const SizedBox(height: 15),
 
-            ProfileStatsCarousel(stats: stats, userId: user!.id),
+            ProfileStatsCarousel(stats: _controller.stats, userId: user.id),
             const SizedBox(height: 8),
 
-            ProfilePhotoCarousel(userId: user!.id, isMyProfile: true),
+            ProfilePhotoCarousel(userId: user.id, isMyProfile: true),
             const SizedBox(height: 15),
 
             const ProfileAppearanceCard(),
             const SizedBox(height: 2),
 
-            ProfileFriendsCard(userId: user!.id),
+            ProfileFriendsCard(userId: user.id), // Не делала пока
             const SizedBox(height: 2),
 
-            if (user!.isAdmin) const ProfileAdminCard(),
+            if (user.isAdmin) const ProfileAdminCard(),
             const SizedBox(height: 5),
 
-            ProfileLogoutButton(onPressed: logout),
+            ProfileLogoutButton(onPressed: _logout),
           ],
         ),
       ),

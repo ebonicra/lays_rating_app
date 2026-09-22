@@ -81,7 +81,10 @@ class _CommentCardState extends State<CommentCard> {
       debugPrint('CommentCard._handleLike error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось поставить реакцию')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось поставить реакцию')
+        ),
       );
     }
 
@@ -116,7 +119,10 @@ class _CommentCardState extends State<CommentCard> {
       debugPrint('CommentCard._handleDislike error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось поставить реакцию')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось поставить реакцию')
+        ),
       );
     }
 
@@ -139,14 +145,20 @@ class _CommentCardState extends State<CommentCard> {
       await CommentsService.deleteComment(commentId: _comment.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Комментарий удалён')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Комментарий удалён')
+        ),
       );
       // TODO: сообщить родителю, чтобы убрал карточку из списка
     } catch (e) {
       debugPrint('CommentCard._openDeleteDialog error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось удалить')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось удалить')
+        ),
       );
     }
   }

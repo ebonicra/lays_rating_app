@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:lays_rating/utils/date_formatter.dart';
 import 'package:lays_rating/models/user.dart';
 import 'package:lays_rating/services/auth_service.dart';
+import 'package:lays_rating/utils/date_formatter.dart';
+import 'package:lays_rating/utils/initials.dart';
+import 'package:lays_rating/widgets/common/full_screen_gallery.dart';
+
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
@@ -14,10 +17,20 @@ class ProfileHeader extends StatelessWidget {
   final User user;
   final VoidCallback? onAvatarTap;
 
-  String get _initial {
-    final name = user.displayName.trim();
-    if (name.isEmpty) return '?';
-    return name.substring(0, 1).toUpperCase();
+  VoidCallback? _defaultAvatarTap(BuildContext context) {
+    if (user.avatarUrl == null) return null;
+
+    return () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FullScreenGallery(
+            imageUrls: ['${AuthService.baseUrl}${user.avatarUrl}'],
+            initialIndex: 0,
+          ),
+        ),
+      );
+    };
   }
 
   @override
@@ -29,7 +42,7 @@ class ProfileHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            colorScheme.onPrimaryContainer.withOpacity(0.7),
+            colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
             colorScheme.inversePrimary,
             colorScheme.surface,
             colorScheme.inversePrimary,
@@ -41,7 +54,7 @@ class ProfileHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.inversePrimary.withOpacity(0.8),
+            color: colorScheme.inversePrimary.withValues(alpha: 0.8),
             blurRadius: 15,
             offset: const Offset(0, 6),
           ),
@@ -50,7 +63,7 @@ class ProfileHeader extends StatelessWidget {
       child: Row(
         children: [
           InkWell(
-            onTap: onAvatarTap,
+            onTap: onAvatarTap ?? _defaultAvatarTap(context),
             customBorder: const CircleBorder(),
             child: CircleAvatar(
               radius: 60,
@@ -59,7 +72,7 @@ class ProfileHeader extends StatelessWidget {
                   : null,
               child: user.avatarUrl == null
                   ? Text(
-                      _initial,
+                      initialOf(user.displayName),
                       style: const TextStyle(
                         fontSize: 56,
                         fontWeight: FontWeight.bold,
@@ -74,9 +87,11 @@ class ProfileHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Transform.translate(
-                  offset: const Offset(-6, 0),
+                  offset: const Offset(-7, 0),
                   child: Text(
                     user.displayName,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
@@ -84,7 +99,9 @@ class ProfileHeader extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "@${user.username}",
+                  '@${user.username}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 16,
                     color: colorScheme.onSurfaceVariant,
@@ -92,7 +109,7 @@ class ProfileHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Transform.translate(
-                  offset: const Offset(-6, 0),
+                  offset: const Offset(-7, 0),
                   child: Row(
                     children: [
                       Icon(
