@@ -6,8 +6,21 @@ String formatShortDate(DateTime date) {
 }
 
 String formatRelativeDate(DateTime date) {
-  final now = DateTime.now();
-  final diff = now.difference(date);
+  final utcDate = date.isUtc
+      ? date
+      : DateTime.utc(
+          date.year,
+          date.month,
+          date.day,
+          date.hour,
+          date.minute,
+          date.second,
+          date.millisecond,
+          date.microsecond,
+        );
+
+  final now = DateTime.now().toUtc();
+  final diff = now.difference(utcDate);
 
   if (diff.inMinutes < 1) return 'только что';
   if (diff.inMinutes < 60) return '${diff.inMinutes} мин. назад';

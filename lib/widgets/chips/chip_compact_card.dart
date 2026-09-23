@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/chip.dart';
-import 'package:lays_rating/widgets/chips/chip_details_page.dart';
 import 'package:lays_rating/services/auth_service.dart';
+import 'package:lays_rating/widgets/chips/chip_details_page.dart';
 
 const double _imageWidth = 100;
 const double _imageHeight = 130;
 
+/// Компактная карточка чипса для списка.
 class ChipCompactCard extends StatelessWidget {
   const ChipCompactCard({
     super.key,
@@ -44,6 +45,7 @@ class ChipCompactCard extends StatelessWidget {
                   '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
                   width: _imageWidth,
                   height: _imageHeight,
+                  cacheWidth: (_imageWidth * MediaQuery.devicePixelRatioOf(context)).round(),
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) return child;
@@ -83,8 +85,9 @@ class ChipCompactCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          // height: 1.1,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -149,6 +152,21 @@ class ChipCompactCard extends StatelessWidget {
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
+                          const Spacer(),
+                          if (chip.isFavorite) ...[
+                            Icon(
+                              Icons.favorite,
+                              size: 16,
+                              color: Colors.red.withValues(alpha: 0.7),
+                            ),
+                          ],
+                          if (chip.isTried) ...[
+                            Icon(
+                              Icons.check_circle,
+                              size: 16,
+                              color: Colors.green.withValues(alpha: 0.7),
+                            ),
+                          ],
                         ],
                       ),
                     ],

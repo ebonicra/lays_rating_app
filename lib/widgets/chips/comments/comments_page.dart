@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lays_rating/models/chip_comment.dart';
 import 'package:lays_rating/services/comments_service.dart';
 import 'package:lays_rating/widgets/chips/comments/comment_card.dart';
+import 'package:lays_rating/widgets/chips/comments/create_comment_dialog.dart';
 
 class CommentsPage extends StatefulWidget {
   final int chipId;
@@ -131,89 +132,17 @@ class _CommentsPageState extends State<CommentsPage> {
   }
 
 
-  void _showCreateCommentDialog() {
-    final controller = TextEditingController();
-    
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 15,
-            right: 15,
-            top: 5,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 15,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Заголовок
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4), // ← сдвиг текста
-                    child: const Text(
-                      'Новый комментарий',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
+  Future<void> _openCreateCommentDialog() async {
+    final text = await CreateCommentDialog.show(context);
+    if (text == null || !mounted) return;
+    await _createComment(text);
+  }
 
-              // Поле с самолётиком через Stack
-              Stack(
-                children: [
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    maxLines: 6,
-                    minLines: 3,
-                    decoration: InputDecoration(
-                      hintText: 'Поделись своим мнением о чипсах...',
-                      hintStyle: const TextStyle(fontSize: 14),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      contentPadding: const EdgeInsets.fromLTRB(12, 12, 50, 12),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 8,
-                    right: 8,
-                    child: IconButton(
-                      onPressed: () {
-                        if (controller.text.trim().isNotEmpty) {
-                          _createComment(controller.text.trim());
-                          Navigator.pop(context);
-                        }
-                      },
-                      icon: Icon(
-                        Icons.send_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      tooltip: 'Отправить',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  void _removeComment(int commentId) {
+    setState(() {
+      _comments.removeWhere((c) => c.id == commentId);
+      if (_totalCount > 0) _totalCount--;
+    });
   }
 
 
@@ -226,9 +155,9 @@ class _CommentsPageState extends State<CommentsPage> {
         title: const Text('Комментарии'),
         actions: [
           Transform.translate(
-            offset: const Offset(8, 0), // ← сдвигаем влево
+            offset: const Offset(8, 0),
             child: IconButton(
-              onPressed: _showCreateCommentDialog,
+              onPressed: _openCreateCommentDialog,
               icon: const Icon(Icons.edit_note_rounded),
               tooltip: 'Написать',
               iconSize: 28,
@@ -237,7 +166,7 @@ class _CommentsPageState extends State<CommentsPage> {
             )
           ),
           Transform.translate(
-            offset: const Offset(4, 0), // ← сдвигаем влево
+            offset: const Offset(4, 0),
             child: PopupMenuButton<String>(
               icon: const Icon(Icons.swap_vert_rounded),
               iconSize: 26,
@@ -354,10 +283,10 @@ class _CommentsPageState extends State<CommentsPage> {
       onRefresh: _loadComments,
       child: ListView.separated(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         itemCount: _comments.length + (_isLoadingMore ? 1 : 0),
         separatorBuilder: (_, index) {
-          // Не показываем разделитель после последнего комментария
           if (index == _comments.length - 1) return const SizedBox.shrink();
           return Divider(
             height: 10,
@@ -375,6 +304,7 @@ class _CommentsPageState extends State<CommentsPage> {
           return CommentCard(
             comment: _comments[index],
             chipId: widget.chipId,
+            onDeleted: () => _removeComment(_comments[index].id),
           );
         },
       ),

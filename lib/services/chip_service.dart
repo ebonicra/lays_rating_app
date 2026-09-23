@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/chip.dart';
+import 'package:lays_rating/models/chip_rating_with_user.dart';
 import 'auth_service.dart';
 
 
@@ -158,5 +159,40 @@ class ChipService {
 
     final data = jsonDecode(body);
     return data['id'];
+  }
+
+  static Future<void> deleteChip(int chipId) async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('Не авторизован');
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/admin/chips/$chipId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Не удалось удалить чипс');
+    }
+  }
+
+  static Future<List<ChipRatingWithUser>> getRatings(int chipId) async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('Не авторизован');
+
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/chips/$chipId/ratings'),
+          headers: {'Authorization': 'Bearer $token'},
+        )
+        .timeout(const Duration(seconds: 15));
+
+    if (response.statusCode != 200) {
+      throw Exception('Не удалось загрузить оценки');
+    }
+
+    final data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
+    return data
+        .map((j) => ChipRatingWithUser.fromJson(j as Map<String, dynamic>))
+        .toList();
   }
 }

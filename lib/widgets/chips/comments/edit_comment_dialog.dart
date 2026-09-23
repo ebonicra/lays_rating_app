@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:lays_rating/models/chip_comment.dart';
 import 'package:lays_rating/services/comments_service.dart';
 
-/// Диалог редактирования комментария.
+/// Минималистичный шит для редактирования комментария.
+///
+/// Возвращает обновлённый [ChipCommentResponse] через [Navigator.pop]
+/// или `null`, если отмена.
 class EditCommentDialog extends StatefulWidget {
   const EditCommentDialog({
     super.key,
@@ -34,17 +37,23 @@ class _EditCommentDialogState extends State<EditCommentDialog> {
   late final TextEditingController _controller;
   bool _isSaving = false;
 
+  bool get _canSubmit => _controller.text.trim().isNotEmpty;
+
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.comment.text);
+    _controller.addListener(_onTextChanged);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
     super.dispose();
   }
+
+  void _onTextChanged() => setState(() {});
 
   Future<void> _save() async {
     final text = _controller.text.trim();
@@ -67,7 +76,7 @@ class _EditCommentDialogState extends State<EditCommentDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Не удалось обновить')
+          content: Text('Не удалось обновить'),
         ),
       );
     }
@@ -75,63 +84,59 @@ class _EditCommentDialogState extends State<EditCommentDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        left: 12,
+        right: 0,
+        top: 12,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 12,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Редактировать',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              autofocus: true,
+              maxLines: 6,
+              minLines: 3,
+              enabled: !_isSaving,
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.newline,
+              decoration: InputDecoration(
+                hintText: 'Исправь своё мнение...',
+                hintStyle: const TextStyle(fontSize: 14),
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
                 ),
               ),
-              IconButton(
-                onPressed: _isSaving ? null : () => Navigator.pop(context),
-                icon: const Icon(Icons.close),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            maxLines: 4,
-            minLines: 2,
-            enabled: !_isSaving,
-            decoration: InputDecoration(
-              hintText: 'Исправь своё мнение...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
             ),
           ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: _isSaving ? null : _save,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: _isSaving
-                ? const SizedBox(
+          IconButton(
+            onPressed: (_canSubmit && !_isSaving) ? _save : null,
+            icon: _isSaving
+                ? SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colorScheme.primary,
+                    ),
                   )
-                : const Text('Сохранить'),
+                : Icon(
+                    Icons.check_rounded,
+                    color: colorScheme.primary,
+                  ),
+            tooltip: 'Сохранить',
           ),
         ],
       ),

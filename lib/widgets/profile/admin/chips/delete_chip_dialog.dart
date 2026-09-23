@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Диалог подтверждения удаления комментария
-class DeleteCommentDialog extends StatelessWidget {
-  const DeleteCommentDialog({super.key});
+/// Диалог подтверждения удаления чипса.
+class DeleteChipDialog extends StatelessWidget {
+  const DeleteChipDialog({super.key});
 
   static Future<bool?> show(BuildContext context) {
     return showDialog<bool>(
       context: context,
-      builder: (_) => const DeleteCommentDialog(),
+      builder: (_) => const DeleteChipDialog(),
     );
   }
 
@@ -21,11 +21,12 @@ class DeleteCommentDialog extends StatelessWidget {
         color: colorScheme.error,
       ),
       title: const Text(
-        'Удалить комментарий?',
+        'Удалить чипс?',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
       ),
       content: const Text(
+        'Все оценки и комментарии к этому чипсу будут удалены. '
         'Это действие нельзя отменить.',
         textAlign: TextAlign.center,
       ),

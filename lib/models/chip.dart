@@ -34,6 +34,8 @@ class LaysChip {
     required this.country,
     required this.releaseYear,
     required this.commentCount,
+    required this.isFavorite,
+    required this.isTried,
   });
 
   final int id;
@@ -47,6 +49,8 @@ class LaysChip {
   final String country;
   final int releaseYear;
   final int commentCount;
+  final bool isFavorite;
+  final bool isTried;
 
   factory LaysChip.fromJson(Map<String, dynamic> json) {
     return LaysChip(
@@ -66,6 +70,8 @@ class LaysChip {
       rating: ChipRating.fromJson(
         json['rating'] as Map<String, dynamic>,
       ),
+      isFavorite: json['is_favorite'] as bool? ?? false,
+      isTried: json['is_tried'] as bool? ?? false,
     );
   }
 
@@ -82,6 +88,8 @@ class LaysChip {
       releaseYear: releaseYear,
       commentCount: commentCount,
       rating: rating ?? this.rating,
+      isFavorite: isFavorite,
+      isTried: isTried,
     );
   }
 }

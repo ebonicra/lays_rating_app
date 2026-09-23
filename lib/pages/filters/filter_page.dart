@@ -58,7 +58,7 @@ class _FilterPageState extends State<FilterPage> {
         return Scaffold(
           appBar: AppBar(title: const Text('Фильтры')),
           body: Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(6),
             child: Column(
               children: [
                 Expanded(
@@ -70,7 +70,7 @@ class _FilterPageState extends State<FilterPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 2),
                 CompactFilterGrid(
                   russiaOnly: _controller.russiaOnly,
                   availableOnly: _controller.availableOnly,
@@ -79,6 +79,7 @@ class _FilterPageState extends State<FilterPage> {
                     _controller.toggleAvailableOnly,
                   ),
                 ),
+                const SizedBox(height: 4),
               ],
             ),
           ),

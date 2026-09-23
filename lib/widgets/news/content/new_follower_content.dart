@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/news_item.dart';
+import 'package:lays_rating/pages/profile/public_profile_page.dart';
 import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/utils/date_formatter.dart';
 import 'package:lays_rating/utils/initials.dart';
@@ -36,49 +37,62 @@ class NewFollowerContent extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: user?.avatarUrl != null
-                  ? NetworkImage(
-                      '${AuthService.baseUrl}${user!.avatarUrl}',
-                    )
-                  : null,
-              child: user?.avatarUrl == null
-                  ? Text(
-                      initialOf(user?.displayName ?? '?'),
+        GestureDetector(
+          onTap: user == null
+              ? null
+              : () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PublicProfilePage(userId: user.id),
+                    ),
+                  );
+                },
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: user?.avatarUrl != null
+                    ? NetworkImage(
+                        '${AuthService.baseUrl}${user!.avatarUrl}',
+                      )
+                    : null,
+                child: user?.avatarUrl == null
+                    ? Text(
+                        initialOf(user?.displayName ?? '?'),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '@${user?.username ?? 'user'}',
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '@${user?.username ?? 'user'}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    formatRelativeDate(item.createdAt),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: theme.colorScheme.onSurfaceVariant,
+                    const SizedBox(height: 2),
+                    Text(
+                      formatRelativeDate(item.createdAt),
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

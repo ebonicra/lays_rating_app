@@ -9,12 +9,8 @@ class ProfileFollowButton extends StatefulWidget {
     required this.onTap,
   });
 
-  /// Текущее состояние подписки.
   final bool isFollowing;
-
-  /// Идёт ли запрос — блокирует кнопку и показывает спиннер.
   final bool isLoading;
-
   final VoidCallback onTap;
 
   @override
@@ -27,7 +23,6 @@ class _ProfileFollowButtonState extends State<ProfileFollowButton> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
     final active = widget.isFollowing;
 
     return AnimatedScale(

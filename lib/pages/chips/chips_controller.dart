@@ -33,7 +33,6 @@ class ChipsController extends ChangeNotifier {
         categories: filters.filters,
       );
 
-      // Серверная фильтрация (russia_only / available_only)
       _allChips = result.where((chip) {
         if (filters.russiaOnly &&
             !chip.country.toLowerCase().contains('россия')) {
@@ -52,17 +51,12 @@ class ChipsController extends ChangeNotifier {
     }
   }
 
-  /// Устанавливает поисковый запрос и пересчитывает видимый список.
   void setQuery(String query) {
     _searchQuery = query;
     _rebuildVisible();
     notifyListeners();
   }
 
-  /// Переключает поле сортировки.
-  ///
-  /// Если поле то же — инвертирует направление.
-  /// Если новое — ставит по убыванию.
   void toggleSort(String field) {
     if (_sortField == field) {
       _sortAscending = !_sortAscending;
@@ -74,21 +68,15 @@ class ChipsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Пересчитывает `_visibleChips` из `_allChips`:
-  /// применяет поиск и сортировку.
   void _rebuildVisible() {
-    // 1. Поиск
     final query = _searchQuery.trim().toLowerCase();
     final filtered = query.isEmpty
         ? List<LaysChip>.from(_allChips)
         : _allChips.where((chip) {
-            return chip.name.toLowerCase().contains(query) ||
-                chip.description.toLowerCase().contains(query);
+            return chip.name.toLowerCase().contains(query);
           }).toList();
 
-    // 2. Сортировка
     filtered.sort(_compare);
-
     _visibleChips = filtered;
   }
 
@@ -97,8 +85,7 @@ class ChipsController extends ChangeNotifier {
     switch (_sortField) {
       case 'name':
         result = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-        // Для имени по возрастанию — алфавитный порядок, по убыванию — обратный
-        return _sortAscending ? result : -result;
+        return _sortAscending ? -result : result;
       case 'date':
         result = a.id.compareTo(b.id);
         return _sortAscending ? result : -result;

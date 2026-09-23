@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 
-import 'package:lays_rating/widgets/profile/admin/manage_admins_page.dart';
+import 'package:lays_rating/widgets/profile/admin/manage_admins/manage_admins_page.dart';
 import 'package:lays_rating/services/user_service.dart';
-import 'package:lays_rating/widgets/profile/admin/manage_admins/admin_menu_card.dart';
+import 'package:lays_rating/widgets/profile/admin/admin_menu_card.dart';
 import 'package:lays_rating/widgets/profile/admin/chips/create_chip_page.dart';
 import 'package:lays_rating/widgets/profile/admin/news/create_news_page.dart';
 

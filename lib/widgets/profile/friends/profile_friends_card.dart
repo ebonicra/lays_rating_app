@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:lays_rating/widgets/friends/friends_page.dart';
+import 'package:lays_rating/widgets/profile/friends/friends_page.dart';
 
 /// Карточка-переход на страницу друзей и приятелей пользователя.
 class ProfileFriendsCard extends StatelessWidget {

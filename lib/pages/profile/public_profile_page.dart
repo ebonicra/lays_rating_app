@@ -80,10 +80,8 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const SizedBox(height: 16),
-
             ProfileHeader(user: user),
-            const SizedBox(height: 25),
+            const SizedBox(height: 14),
 
             ProfileStatsCarousel(
               stats: _controller.stats,
@@ -92,7 +90,7 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
             const SizedBox(height: 8),
 
             ProfilePhotoCarousel(userId: user.id, isMyProfile: false),
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
 
             ProfileFollowsMeBadge(isFollowingMe: _controller.isFollowingMe),
             const SizedBox(height: 4),

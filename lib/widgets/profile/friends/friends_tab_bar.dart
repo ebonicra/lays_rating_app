@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 /// Таб-бар с двумя вкладками: «Подписки» и «Подписчики».
 class FriendsTabBar extends StatelessWidget {
-  const FriendsTabBar({super.key});
+  const FriendsTabBar({
+    super.key,
+    required this.controller,
+  });
+
+  final TabController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -16,12 +21,13 @@ class FriendsTabBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(25),
         ),
         child: TabBar(
+          controller: controller,   // ← передаём
           indicatorSize: TabBarIndicatorSize.tab,
           indicator: BoxDecoration(
             color: colorScheme.inversePrimary,
             borderRadius: BorderRadius.circular(25),
           ),
-          labelColor: Colors.white,
+          labelColor: colorScheme.onPrimary,
           unselectedLabelColor: colorScheme.onSurfaceVariant,
           labelStyle: const TextStyle(
             fontWeight: FontWeight.bold,

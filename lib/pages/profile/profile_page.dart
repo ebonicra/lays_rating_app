@@ -9,7 +9,7 @@ import 'package:lays_rating/widgets/profile/admin/profile_admin_card.dart';
 import 'package:lays_rating/widgets/profile/appearance/profile_appearance_card.dart';
 import 'package:lays_rating/widgets/profile/profile_delete_account_dialog.dart';
 import 'package:lays_rating/widgets/profile/profile_edit_dialog.dart';
-import 'package:lays_rating/widgets/profile/profile_friends_card.dart';
+import 'package:lays_rating/widgets/profile/friends/profile_friends_card.dart';
 import 'package:lays_rating/widgets/profile/profile_header.dart';
 import 'package:lays_rating/widgets/profile/profile_logout_button.dart';
 import 'package:lays_rating/widgets/profile/profile_menu_button.dart';
@@ -143,16 +143,14 @@ class _ProfilePageState extends State<ProfilePage> with RouteAware {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            const SizedBox(height: 10),
-
             ProfileHeader(user: user),
-            const SizedBox(height: 15),
+            const SizedBox(height: 14),
 
             ProfileStatsCarousel(stats: _controller.stats, userId: user.id),
             const SizedBox(height: 8),
 
             ProfilePhotoCarousel(userId: user.id, isMyProfile: true),
-            const SizedBox(height: 15),
+            const SizedBox(height: 14),
 
             const ProfileAppearanceCard(),
             const SizedBox(height: 2),

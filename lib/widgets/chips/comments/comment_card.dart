@@ -6,6 +6,7 @@ import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/services/comments_service.dart';
 import 'package:lays_rating/services/user_service.dart';
 import 'package:lays_rating/utils/initials.dart';
+import 'package:lays_rating/utils/date_formatter.dart';
 import 'package:lays_rating/widgets/common/rating_badge.dart';
 import 'package:lays_rating/widgets/common/reaction_button.dart';
 
@@ -18,10 +19,12 @@ class CommentCard extends StatefulWidget {
     super.key,
     required this.comment,
     required this.chipId,
+    this.onDeleted,
   });
 
   final ChipCommentResponse comment;
   final int chipId;
+  final VoidCallback? onDeleted;
 
   @override
   State<CommentCard> createState() => _CommentCardState();
@@ -48,10 +51,10 @@ class _CommentCardState extends State<CommentCard> {
     }
   }
 
-  bool get _isMyComment =>
-      UserService.currentUser?.id == _comment.user.id;
+  bool get _isMyComment => UserService.currentUser?.id == _comment.user.id;
+  bool get _isAdmin => UserService.currentUser?.isAdmin ?? false;
+  bool get _wasEdited => _comment.updatedAt.isAfter(_comment.createdAt);
 
-  // ===== РЕАКЦИИ =====
 
   Future<void> _handleLike() async {
     if (_isLoading) return;
@@ -129,7 +132,6 @@ class _CommentCardState extends State<CommentCard> {
     if (mounted) setState(() => _isLoading = false);
   }
 
-  // ===== ДЕЙСТВИЯ =====
 
   Future<void> _openEditDialog() async {
     final updated = await EditCommentDialog.show(context, _comment);
@@ -144,26 +146,27 @@ class _CommentCardState extends State<CommentCard> {
     try {
       await CommentsService.deleteComment(commentId: _comment.id);
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Комментарий удалён')
+          content: Text('Комментарий удалён'),
         ),
       );
-      // TODO: сообщить родителю, чтобы убрал карточку из списка
+
+      widget.onDeleted?.call();   // ← уведомляем родителя
     } catch (e) {
       debugPrint('CommentCard._openDeleteDialog error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Не удалось удалить')
+          content: Text('Не удалось удалить'),
         ),
       );
     }
   }
 
-  // ===== BUILD =====
 
   @override
   Widget build(BuildContext context) {
@@ -223,20 +226,37 @@ class _CommentCardState extends State<CommentCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _comment.user.username,
+                '@${_comment.user.username}',
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
                   height: 1.2,
                 ),
               ),
-              Text(
-                _formatDate(_comment.createdAt),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.2,
-                ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  Text(
+                    formatRelativeDate(_comment.createdAt),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.2,
+                    ),
+                  ),
+                  if (_wasEdited) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      '(ред. ${formatRelativeDate(_comment.updatedAt)})',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
@@ -317,6 +337,13 @@ class _CommentCardState extends State<CommentCard> {
             onTap: _openDeleteDialog,
           ),
           const SizedBox(width: 2),
+        ] else if (_isAdmin) ...[
+          _MiniCircleButton(
+            icon: Icons.delete_outline,
+            onTap: _openDeleteDialog,
+            color: theme.colorScheme.error,
+          ),
+          const SizedBox(width: 2),
         ],
       ],
     );
@@ -336,29 +363,20 @@ class _CommentCardState extends State<CommentCard> {
     textPainter.layout(maxWidth: MediaQuery.of(context).size.width - 80);
     return textPainter.didExceedMaxLines;
   }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inMinutes < 1) return 'только что';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} мин. назад';
-    if (diff.inHours < 24) return '${diff.inHours} ч. назад';
-    if (diff.inDays < 7) return '${diff.inDays} д. назад';
-    return '${date.day}.${date.month}.${date.year}';
-  }
 }
 
-// ===== ПРИВАТНЫЕ ВИДЖЕТЫ =====
 
 
 class _MiniCircleButton extends StatelessWidget {
   const _MiniCircleButton({
     required this.icon,
     required this.onTap,
+    this.color,
   });
 
   final IconData icon;
   final VoidCallback onTap;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -372,7 +390,7 @@ class _MiniCircleButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 16,
-          color: colorScheme.onSurfaceVariant,
+          color: color ?? colorScheme.onSurfaceVariant,
         ),
       ),
     );

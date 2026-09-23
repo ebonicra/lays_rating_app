@@ -12,11 +12,13 @@ class RatingSection extends StatelessWidget {
     required this.chip,
     required this.preference,
     required this.onRatingChanged,
+    this.onAverageRatingLongPress,
   });
 
   final LaysChip chip;
   final ChipPreference preference;
   final ValueChanged<int> onRatingChanged;
+  final VoidCallback? onAverageRatingLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +56,7 @@ class RatingSection extends StatelessWidget {
           child: AverageRatingBadge(
             rating: chip.rating.average,
             count: chip.rating.count,
+            onLongPress: onAverageRatingLongPress,
           ),
         ),
       ],

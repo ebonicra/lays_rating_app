@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'package:lays_rating/pages/chips/chips_controller.dart';
 import 'package:lays_rating/widgets/chips/chip_compact_card.dart';
 import 'package:lays_rating/widgets/chips/chips_sort_menu.dart';
 
-import 'chips_controller.dart';
-
+/// Страница со списком чипсов: поиск, сортировка и переход к деталям.
 
 class ChipsPage extends StatefulWidget {
   const ChipsPage({super.key});
@@ -112,6 +112,7 @@ class _ChipsPageState extends State<ChipsPage> {
     }
 
     return ListView.builder(
+      padding: const EdgeInsets.only(top: 4),
       itemCount: chips.length,
       itemBuilder: (context, index) {
         return ChipCompactCard(

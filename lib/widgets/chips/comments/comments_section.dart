@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/chip_comment.dart';
-import 'package:lays_rating/pages/chips/comments_page.dart';
+import 'package:lays_rating/widgets/chips/comments/comments_page.dart';
 import 'package:lays_rating/services/comments_service.dart';
 import 'package:lays_rating/widgets/chips/comments/comment_card.dart';
 import 'package:lays_rating/widgets/chips/comments/create_comment_dialog.dart';
@@ -16,10 +16,10 @@ class CommentsSection extends StatefulWidget {
   final int chipId;
 
   @override
-  State<CommentsSection> createState() => _CommentsSectionState();
+  State<CommentsSection> createState() => CommentsSectionState();
 }
 
-class _CommentsSectionState extends State<CommentsSection> {
+class CommentsSectionState extends State<CommentsSection> {
   List<ChipCommentResponse>? _comments;
   bool _isLoading = true;
   String? _error;
@@ -29,6 +29,10 @@ class _CommentsSectionState extends State<CommentsSection> {
   void initState() {
     super.initState();
     _loadComments();
+  }
+
+  Future<void> refresh() async {
+    await _loadComments();
   }
 
   Future<void> _loadComments() async {
@@ -76,6 +80,13 @@ class _CommentsSectionState extends State<CommentsSection> {
     await _createComment(text);
   }
 
+  void _removeComment(int commentId) {
+    setState(() {
+      _comments?.removeWhere((c) => c.id == commentId);
+      if (_totalCount > 0) _totalCount--;
+    });
+  }
+
   Future<void> _createComment(String text) async {
     try {
       final newComment = await CommentsService.createComment(
@@ -117,14 +128,17 @@ class _CommentsSectionState extends State<CommentsSection> {
                 fontSize: 20,
               ),
             ),
-            IconButton(
-              onPressed: _openCreateCommentDialog,
-              icon: Icon(
-                Icons.edit_note_rounded,
-                size: 30,
-                color: theme.colorScheme.primary,
-              ),
-              tooltip: 'Написать',
+            Transform.translate(
+              offset: const Offset(8, 0),
+              child: IconButton(
+                onPressed: _openCreateCommentDialog,
+                icon: Icon(
+                  Icons.edit_note_rounded,
+                  size: 30,
+                  color: theme.colorScheme.primary,
+                ),
+                tooltip: 'Написать',
+              )
             ),
           ],
         ),
@@ -192,7 +206,7 @@ class _CommentsSectionState extends State<CommentsSection> {
           Icon(
             Icons.chat_bubble_outline_rounded,
             size: 48,
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
           ),
           const SizedBox(height: 12),
           Text(
@@ -201,13 +215,13 @@ class _CommentsSectionState extends State<CommentsSection> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Будь первым, кто поделится мнением!',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
-            ),
-          ),
+          const SizedBox(height: 12),
+          // Text(
+          //   'Будь первым, кто поделится мнением!',
+          //   style: theme.textTheme.bodyMedium?.copyWith(
+          //     color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+          //   ),
+          // ),
         ],
       ),
     );
@@ -232,6 +246,7 @@ class _CommentsSectionState extends State<CommentsSection> {
             return CommentCard(
               comment: visible[index],
               chipId: widget.chipId,
+              onDeleted: () => _removeComment(visible[index].id),
             );
           },
         ),

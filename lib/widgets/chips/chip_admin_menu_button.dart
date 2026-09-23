@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Меню (три точки) с админскими действиями над чипсом:
+/// Меню (три точки) с админскими действиями над чипсом
 class ChipAdminMenuButton extends StatelessWidget {
   const ChipAdminMenuButton({
     super.key,
-    // required this.onAdd,
     required this.onEdit,
     required this.onDelete,
   });
 
-  // final VoidCallback onAdd;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -22,12 +20,9 @@ class ChipAdminMenuButton extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      constraints: const BoxConstraints(maxWidth: 170),
+      constraints: const BoxConstraints(maxWidth: 200),
       onSelected: (value) {
         switch (value) {
-          // case 'add':
-          //   onAdd();
-          //   break;
           case 'edit':
             onEdit();
             break;
@@ -38,16 +33,10 @@ class ChipAdminMenuButton extends StatelessWidget {
       },
       itemBuilder: (context) => [
         _buildItem(
-          value: 'add',
-          label: 'Добавить',
-          icon: Icons.add_circle_outline,
-          color: colorScheme.error,
-        ),
-        _buildItem(
           value: 'edit',
           label: 'Редактировать',
           icon: Icons.edit_outlined,
-          color: colorScheme.error,
+          color: colorScheme.onSurface,
         ),
         _buildItem(
           value: 'delete',
@@ -67,7 +56,7 @@ class ChipAdminMenuButton extends StatelessWidget {
   }) {
     return PopupMenuItem<String>(
       value: value,
-      height: 25,
+      height: 40,
       child: ListTile(
         leading: Icon(icon, size: 20, color: color),
         title: Text(

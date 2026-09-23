@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/chip.dart';
 import 'package:lays_rating/models/chip_preference.dart';
+
 import 'package:lays_rating/services/chip_service.dart';
 import 'package:lays_rating/services/preference_service.dart';
 import 'package:lays_rating/services/user_service.dart';
+
 import 'package:lays_rating/widgets/chips/chip_details_view.dart';
 import 'package:lays_rating/widgets/chips/chip_admin_menu_button.dart';
 import 'package:lays_rating/widgets/profile/admin/chips/edit_chip_page.dart';
+import 'package:lays_rating/widgets/profile/admin/chips/delete_chip_dialog.dart';
+import 'package:lays_rating/widgets/chips/comments/comments_section.dart';
+import 'package:lays_rating/widgets/chips/chip_ratings_sheet.dart';
 
 
 class ChipDetailsPage extends StatefulWidget {
@@ -23,6 +28,7 @@ class ChipDetailsPage extends StatefulWidget {
 }
 
 class _ChipDetailsPageState extends State<ChipDetailsPage> {
+  final _commentsKey = GlobalKey<CommentsSectionState>();
   LaysChip? chip;
   ChipPreference? preference;
   bool isLoading = true;
@@ -38,8 +44,7 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
   Future<void> loadData() async {
     try {
       final chipResult = await ChipService.fetchChipById(widget.chipId);
-      final preferenceResult =
-          await PreferenceService.getPreference(widget.chipId);
+      final preferenceResult = await PreferenceService.getPreference(widget.chipId);
 
       if (!mounted) return;
       setState(() {
@@ -47,6 +52,8 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
         preference = preferenceResult;
         isLoading = false;
       });
+
+      await _commentsKey.currentState?.refresh();
     } catch (e) {
       debugPrint('ChipDetailsPage.loadData error: $e');
       if (!mounted) return;
@@ -132,14 +139,11 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
     }
   }
 
-  // void _openAddChip() {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (_) => const EditChipPage(chip: null),
-  //     ),
-  //   );
-  // }
+  void _openRatingsSheet() {
+    final chip = this.chip;
+    if (chip == null) return;
+    ChipRatingsSheet.show(context, chip.id);
+  }
 
   void _openEditChip() {
     Navigator.push(
@@ -152,8 +156,32 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
     });
   }
 
-  void _deleteChip() {
-    // TODO: удалить чипс
+  Future<void> _deleteChip() async {
+    final chip = this.chip;
+    if (chip == null) return;
+
+    final confirmed = await DeleteChipDialog.show(context);
+    if (confirmed != true || !mounted) return;
+    try {
+      await ChipService.deleteChip(chip.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Чипс удалён'),
+        ),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      debugPrint('ChipDetailsPage._deleteChip error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось удалить чипс'),
+        ),
+      );
+    }
   }
 
   @override
@@ -164,26 +192,35 @@ class _ChipDetailsPageState extends State<ChipDetailsPage> {
         actions: [
           if (_isAdmin)
             ChipAdminMenuButton(
-              // onAdd: _openAddChip,
               onEdit: _openEditChip,
               onDelete: _deleteChip,
             ),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : chip == null || preference == null
-              ? const Center(child: Text('Не удалось загрузить данные'))
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ChipDetailsView(
-                    chip: chip!,
-                    preference: preference!,
-                    onRatingChanged: changeRating,
-                    onFavoriteChanged: toggleFavorite,
-                    onTriedChanged: toggleTried,
-                  ),
-                ),
+      body: RefreshIndicator(
+        onRefresh: loadData,
+        child: _buildBody(),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (chip == null || preference == null) {
+      return const Center(child: Text('Не удалось загрузить данные'));
+    }
+
+    return ChipDetailsView(
+      chip: chip!,
+      preference: preference!,
+      onRatingChanged: changeRating,
+      onFavoriteChanged: toggleFavorite,
+      onTriedChanged: toggleTried,
+      onAverageRatingLongPress: _openRatingsSheet,
+      commentsKey: _commentsKey,
     );
   }
 }

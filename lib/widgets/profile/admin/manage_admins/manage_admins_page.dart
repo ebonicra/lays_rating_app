@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/user.dart';
+import 'package:lays_rating/widgets/common/user_list_tile.dart';
+import 'package:lays_rating/widgets/common/user_action_button.dart';
 import 'package:lays_rating/services/admin_service.dart';
-import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/services/follow_service.dart';
 import 'package:lays_rating/services/user_service.dart';
-import 'package:lays_rating/utils/initials.dart';
 
 /// Управление админами (только для супер-админов).
 class ManageAdminsPage extends StatefulWidget {
@@ -168,77 +168,22 @@ class _ManageAdminsPageState extends State<ManageAdminsPage> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(6),
       itemCount: users.length,
       itemBuilder: (context, index) {
         final user = users[index];
-        return Card(
-          child: ListTile(
-            leading: _buildAvatar(user),
-            title: Text(
-              user.displayName,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text('@${user.username}'),
-            trailing: _AdminToggleButton(
-              isAdmin: _adminIds.contains(user.id),
-              onTap: () => _toggleAdmin(user),
-            ),
+        return UserListTile(
+          userId: user.id,
+          displayName: user.displayName,
+          username: user.username,
+          avatarUrl: user.avatarUrl,
+          trailing: UserActionButton(
+            label: _adminIds.contains(user.id) ? 'Снять' : 'Назначить',
+            active: _adminIds.contains(user.id),
+            onTap: () => _toggleAdmin(user),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildAvatar(User user) {
-    return CircleAvatar(
-      radius: 20,
-      backgroundImage: user.avatarUrl != null
-          ? NetworkImage('${AuthService.baseUrl}${user.avatarUrl}')
-          : null,
-      child: user.avatarUrl == null
-          ? Text(
-              initialOf(user.displayName),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            )
-          : null,
-    );
-  }
-}
-
-/// Кнопка «Назначить» / «Снять» для управления админскими правами.
-class _AdminToggleButton extends StatelessWidget {
-  const _AdminToggleButton({
-    required this.isAdmin,
-    required this.onTap,
-  });
-
-  final bool isAdmin;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isAdmin
-            ? colorScheme.surfaceContainerHighest
-            : colorScheme.primary,
-        foregroundColor: isAdmin
-            ? colorScheme.onSurface
-            : colorScheme.onPrimary,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        minimumSize: const Size(110, 32),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-      ),
-      child: Text(
-        isAdmin ? 'Снять' : 'Назначить',
-        style: const TextStyle(fontSize: 12),
-      ),
     );
   }
 }

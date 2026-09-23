@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lays_rating/models/chip_type.dart';
 import 'package:lays_rating/widgets/filters/filter_card.dart';
 
-/// Сетка карточек фильтров.
-///
-/// - В портрете — 2 колонки, в ландшафте — 3.
-/// - Если карточки не влезают — можно скроллить.
+/// Сетка карточек фильтров
 class FilterGrid extends StatelessWidget {
   const FilterGrid({
     super.key,
@@ -27,12 +24,12 @@ class FilterGrid extends StatelessWidget {
 
     return GridView.builder(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 1),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
-        crossAxisSpacing: 10,
+        crossAxisSpacing: 8,
         mainAxisSpacing: 8,
-        childAspectRatio: 0.9,
+        childAspectRatio: 0.95,
       ),
       itemCount: types.length,
       itemBuilder: (context, index) {
