@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:lays_rating/models/news_image.dart';
+import 'package:lays_rating/models/news_item.dart';
 import 'package:lays_rating/services/admin_service.dart';
 import 'package:lays_rating/widgets/profile/admin/news/widgets/news_image_grid.dart';
 import 'package:lays_rating/widgets/profile/admin/news/widgets/poll_draft_option.dart';
 import 'package:lays_rating/widgets/profile/admin/news/widgets/poll_option_input.dart';
 
-/// Страница создания опроса (картинки + вопрос + варианты + текст).
+/// Страница создания / редактирования опроса
+/// (картинки + вопрос + варианты + текст).
 class PollPage extends StatefulWidget {
-  const PollPage({super.key});
+  const PollPage({
+    super.key,
+    this.initialNews,
+  });
+
+  final NewsItem? initialNews;
 
   @override
   State<PollPage> createState() => _PollPageState();
@@ -19,25 +27,55 @@ class _PollPageState extends State<PollPage> {
   static const int _maxOptions = 10;
   static const int _minOptions = 2;
 
-  final _questionController = TextEditingController();
-  final _textController = TextEditingController();
-  final List<String> _imagePaths = [];
+  late final TextEditingController _questionController;
+  late final TextEditingController _textController;
+  final List<NewsImage> _images = [];
   final List<PollDraftOption> _options = [];
 
   bool _isSaving = false;
 
-  bool get _isDirty =>
-      _questionController.text.trim().isNotEmpty ||
-      _textController.text.trim().isNotEmpty ||
-      _imagePaths.isNotEmpty ||
-      _options.any((o) => o.textController.text.trim().isNotEmpty);
+  bool get _isEditing => widget.initialNews != null;
 
   @override
   void initState() {
     super.initState();
-    // По умолчанию — два пустых варианта
-    _options.add(PollDraftOption());
-    _options.add(PollDraftOption());
+
+    final news = widget.initialNews;
+
+    // === Текст и вопрос ===
+    _textController = TextEditingController(text: news?.text ?? '');
+    _questionController = TextEditingController(
+      text: (news?.extraData?['question'] as String?) ?? '',
+    );
+
+    // === Картинки и варианты ===
+    if (news != null) {
+      final extra = news.extraData;
+
+      // Картинки — по индексу в option. Картинки у опроса привязаны
+      // к вариантам по позиции, отдельного списка нет.
+      final options = extra?['options'] as List?;
+      if (options != null) {
+        for (final o in options) {
+          if (o is Map) {
+            final text = o['text'] as String? ?? '';
+            final option = PollDraftOption()..textController.text = text;
+            _options.add(option);
+
+            final imgPath = o['image_path'] as String?;
+            if (imgPath != null && imgPath.isNotEmpty) {
+              _images.add(NewsImage.remote(imgPath));
+            }
+          }
+        }
+      }
+    }
+
+    // Если вариантов нет — добавляем минимум (пустые)
+    if (_options.isEmpty) {
+      _options.add(PollDraftOption());
+      _options.add(PollDraftOption());
+    }
   }
 
   @override
@@ -50,25 +88,31 @@ class _PollPageState extends State<PollPage> {
     super.dispose();
   }
 
+  // ===== КАРТИНКИ =====
+
   Future<void> _pickImages() async {
     final picker = ImagePicker();
-    final images = await picker.pickMultiImage(
+    final picked = await picker.pickMultiImage(
       imageQuality: 80,
       maxWidth: 1080,
       maxHeight: 1080,
     );
 
-    if (images.isEmpty || !mounted) return;
+    if (picked.isEmpty || !mounted) return;
 
     setState(() {
-      final remaining = _maxImages - _imagePaths.length;
-      _imagePaths.addAll(images.take(remaining).map((img) => img.path));
+      final remaining = _maxImages - _images.length;
+      _images.addAll(
+        picked.take(remaining).map((img) => NewsImage.local(img.path)),
+      );
     });
   }
 
   void _removeImage(int index) {
-    setState(() => _imagePaths.removeAt(index));
+    setState(() => _images.removeAt(index));
   }
+
+  // ===== ВАРИАНТЫ =====
 
   void _addOption() {
     if (_options.length >= _maxOptions) return;
@@ -77,31 +121,101 @@ class _PollPageState extends State<PollPage> {
 
   void _removeOption(int index) {
     if (_options.length <= _minOptions) return;
+
     setState(() {
       _options[index].dispose();
       _options.removeAt(index);
+
+      // Если картинки были привязаны к варианту по индексу —
+      // удаляем соответствующую (если есть)
+      if (index < _images.length) {
+        _images.removeAt(index);
+      }
     });
   }
 
+  // ===== DIRTY =====
+
+  bool _isDirty() {
+    final news = widget.initialNews;
+
+    if (news == null) {
+      return _questionController.text.trim().isNotEmpty ||
+          _textController.text.trim().isNotEmpty ||
+          _images.isNotEmpty ||
+          _options.any((o) => o.textController.text.trim().isNotEmpty);
+    }
+
+    final originalQuestion =
+        (news.extraData?['question'] as String?) ?? '';
+    if (_questionController.text.trim() != originalQuestion.trim()) {
+      return true;
+    }
+
+    final originalText = (news.text ?? '').trim();
+    if (_textController.text.trim() != originalText) return true;
+
+    if (_images.any((i) => i.isLocal)) return true;
+
+    // Сравнение вариантов
+    final originalOptions = (news.extraData?['options'] as List?) ?? [];
+    final currentFilled = _options
+        .where((o) => o.textController.text.trim().isNotEmpty)
+        .toList();
+
+    if (currentFilled.length != originalOptions.length) return true;
+
+    for (var i = 0; i < currentFilled.length; i++) {
+      final originalText =
+          (originalOptions[i] as Map)['text'] as String? ?? '';
+      if (currentFilled[i].textController.text.trim() != originalText.trim()) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   Future<bool> _confirmExit() async {
-    if (!_isDirty) return true;
+    if (!_isDirty()) return true;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Выйти без сохранения?'),
-        content: const Text('Изменения не сохранятся.'),
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        title: const Text(
+          'Выйти без сохранения?',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Все несохранённые изменения будут потеряны.',
+          textAlign: TextAlign.center,
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Остаться'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Выйти'),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Остаться'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    foregroundColor: Theme.of(context).colorScheme.onError,
+                  ),
+                  child: const Text('Выйти'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -109,6 +223,8 @@ class _PollPageState extends State<PollPage> {
 
     return confirmed ?? false;
   }
+
+  // ===== СОХРАНЕНИЕ =====
 
   Future<void> _save() async {
     final question = _questionController.text.trim();
@@ -126,11 +242,10 @@ class _PollPageState extends State<PollPage> {
       return;
     }
 
-    // Проверка: если картинки есть — их количество должно совпадать
-    if (_imagePaths.isNotEmpty &&
-        _imagePaths.length != filledOptions.length) {
+    // Если картинки есть — их количество должно совпадать
+    if (_images.isNotEmpty && _images.length != filledOptions.length) {
       _showError(
-        'Картинок: ${_imagePaths.length}, '
+        'Картинок: ${_images.length}, '
         'вариантов: ${filledOptions.length}. Должно совпадать.',
       );
       return;
@@ -139,11 +254,16 @@ class _PollPageState extends State<PollPage> {
     setState(() => _isSaving = true);
 
     try {
-      // Загружаем картинки
+      // Обрабатываем картинки: локальные — грузим, серверные — как есть
       final uploadedPaths = <String>[];
-      for (final path in _imagePaths) {
-        final imagePath = await AdminService.uploadNewsImage(path);
-        uploadedPaths.add(imagePath);
+      for (final image in _images) {
+        if (image.isRemote) {
+          uploadedPaths.add(image.remotePath!);
+        } else {
+          final uploaded =
+              await AdminService.uploadNewsImage(image.localPath!);
+          uploadedPaths.add(uploaded);
+        }
       }
 
       // Раскладываем по вариантам по индексу
@@ -155,38 +275,50 @@ class _PollPageState extends State<PollPage> {
         });
       }
 
-      await AdminService.createNews(
-        eventType: 'poll',
-        text: _textController.text.trim(),
-        extraData: {
-          'question': question,
-          'options': optionsData,
-        },
-      );
+      final extraData = <String, dynamic>{
+        'question': question,
+        'options': optionsData,
+      };
+
+      if (_isEditing) {
+        await AdminService.updateNews(
+          newsId: widget.initialNews!.id,
+          text: _textController.text.trim(),
+          extraData: extraData,
+        );
+      } else {
+        await AdminService.createNews(
+          eventType: 'poll',
+          text: _textController.text.trim(),
+          extraData: extraData,
+        );
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Опрос создан')
+          content: Text(_isEditing ? 'Сохранено' : 'Опрос создан'),
         ),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       debugPrint('PollPage._save error: $e');
       if (!mounted) return;
-      _showError('Не удалось создать опрос');
+      _showError(_isEditing ? 'Не удалось сохранить' : 'Не удалось создать опрос');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
+
+  // ===== HELPERS =====
 
   Widget _buildImageCountHint(ThemeData theme) {
     final filledCount = _options
         .where((o) => o.textController.text.trim().isNotEmpty)
         .length;
 
-    if (_imagePaths.isEmpty) {
+    if (_images.isEmpty) {
       return Text(
         'Картинки необязательны',
         style: TextStyle(
@@ -196,13 +328,15 @@ class _PollPageState extends State<PollPage> {
       );
     }
 
-    final isValid = _imagePaths.length == filledCount;
+    final isValid = _images.length == filledCount;
 
     return Text(
-      'Картинок: ${_imagePaths.length}, вариантов: $filledCount',
+      'Картинок: ${_images.length}, вариантов: $filledCount',
       style: TextStyle(
         fontSize: 12,
-        color: isValid ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.error,
+        color: isValid
+            ? theme.colorScheme.onSurfaceVariant
+            : theme.colorScheme.error,
       ),
     );
   }
@@ -212,10 +346,12 @@ class _PollPageState extends State<PollPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        content: Text(message)
+        content: Text(message),
       ),
     );
   }
+
+  // ===== BUILD =====
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +367,9 @@ class _PollPageState extends State<PollPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Опрос')),
+        appBar: AppBar(
+          title: Text(_isEditing ? 'Редактировать опрос' : 'Опрос'),
+        ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -244,7 +382,7 @@ class _PollPageState extends State<PollPage> {
               ),
               const SizedBox(height: 8),
               NewsImageGrid(
-                imagePaths: _imagePaths,
+                images: _images,
                 onAdd: _pickImages,
                 onRemove: _removeImage,
                 maxImages: _maxImages,
@@ -303,6 +441,8 @@ class _PollPageState extends State<PollPage> {
                   label: const Text('Добавить вариант'),
                 ),
               const SizedBox(height: 16),
+
+              // === Текст новости ===
               TextField(
                 controller: _textController,
                 textCapitalization: TextCapitalization.sentences,
@@ -357,7 +497,7 @@ class _PollPageState extends State<PollPage> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Сохранить'),
+                      : Text(_isEditing ? 'Сохранить' : 'Создать'),
                 ),
               ),
             ],

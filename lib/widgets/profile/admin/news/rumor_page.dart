@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:lays_rating/models/news_image.dart';
+import 'package:lays_rating/models/news_item.dart';
 import 'package:lays_rating/services/admin_service.dart';
 import 'package:lays_rating/widgets/profile/admin/news/widgets/news_image_grid.dart';
 
-/// Страница создания слуха (картинки + источник + текст).
+/// Страница создания / редактирования слуха (картинки + источник + текст).
 class RumorPage extends StatefulWidget {
-  const RumorPage({super.key});
+  const RumorPage({
+    super.key,
+    this.initialNews,
+  });
+
+  final NewsItem? initialNews;
 
   @override
   State<RumorPage> createState() => _RumorPageState();
@@ -21,15 +28,43 @@ class _RumorPageState extends State<RumorPage> {
     'Замечено в магазине',
   ];
 
-  final _textController = TextEditingController();
-  final List<String> _imagePaths = [];
+  late final TextEditingController _textController;
+  final List<NewsImage> _images = [];
   String _source = '';
   bool _isSaving = false;
 
-  bool get _isDirty =>
-      _textController.text.trim().isNotEmpty ||
-      _imagePaths.isNotEmpty ||
-      _source.isNotEmpty;
+  bool get _isEditing => widget.initialNews != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final news = widget.initialNews;
+    _textController = TextEditingController(text: news?.text ?? '');
+
+    if (news != null) {
+      final extra = news.extraData;
+
+      // Источник
+      final src = extra?['source'] as String?;
+      if (src != null && _sources.contains(src)) {
+        _source = src;
+      }
+
+      // Картинки
+      final chips = extra?['chips'] as List?;
+      if (chips != null) {
+        for (final c in chips) {
+          if (c is Map) {
+            final path = c['image_path'] as String?;
+            if (path != null && path.isNotEmpty) {
+              _images.add(NewsImage.remote(path));
+            }
+          }
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -39,43 +74,88 @@ class _RumorPageState extends State<RumorPage> {
 
   Future<void> _pickImages() async {
     final picker = ImagePicker();
-    final images = await picker.pickMultiImage(
+    final picked = await picker.pickMultiImage(
       imageQuality: 80,
       maxWidth: 1080,
       maxHeight: 1080,
     );
 
-    if (images.isEmpty || !mounted) return;
+    if (picked.isEmpty || !mounted) return;
 
     setState(() {
-      final remaining = _maxImages - _imagePaths.length;
-      _imagePaths.addAll(images.take(remaining).map((img) => img.path));
+      final remaining = _maxImages - _images.length;
+      _images.addAll(
+        picked.take(remaining).map((img) => NewsImage.local(img.path)),
+      );
     });
   }
 
   void _removeImage(int index) {
-    setState(() => _imagePaths.removeAt(index));
+    setState(() => _images.removeAt(index));
+  }
+
+  bool _isDirty() {
+    final news = widget.initialNews;
+
+    if (news == null) {
+      return _textController.text.trim().isNotEmpty ||
+          _images.isNotEmpty ||
+          _source.isNotEmpty;
+    }
+
+    final originalText = (news.text ?? '').trim();
+    if (_textController.text.trim() != originalText) return true;
+
+    final originalSource = (news.extraData?['source'] as String?) ?? '';
+    if (_source != originalSource) return true;
+
+    if (_images.any((i) => i.isLocal)) return true;
+
+    final originalCount =
+        (news.extraData?['chips'] as List?)?.length ?? 0;
+    return _images.length != originalCount;
   }
 
   Future<bool> _confirmExit() async {
-    if (!_isDirty) return true;
+    if (!_isDirty()) return true;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Выйти без сохранения?'),
-        content: const Text('Изменения не сохранятся.'),
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        title: const Text(
+          'Выйти без сохранения?',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Все несохранённые изменения будут потеряны.',
+          textAlign: TextAlign.center,
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Остаться'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Выйти'),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Остаться'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    foregroundColor: Theme.of(context).colorScheme.onError,
+                  ),
+                  child: const Text('Выйти'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -85,11 +165,11 @@ class _RumorPageState extends State<RumorPage> {
   }
 
   Future<void> _save() async {
-    if (_imagePaths.isEmpty) {
+    if (_images.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Загрузите хотя бы одну картинку')
+          content: Text('Загрузите хотя бы одну картинку'),
         ),
       );
       return;
@@ -99,35 +179,53 @@ class _RumorPageState extends State<RumorPage> {
 
     try {
       final chipsData = <Map<String, dynamic>>[];
-      for (final path in _imagePaths) {
-        final imagePath = await AdminService.uploadNewsImage(path);
-        chipsData.add({'image_path': imagePath});
+
+      for (final image in _images) {
+        if (image.isRemote) {
+          chipsData.add({'image_path': image.remotePath});
+        } else {
+          final uploaded =
+              await AdminService.uploadNewsImage(image.localPath!);
+          chipsData.add({'image_path': uploaded});
+        }
       }
 
-      await AdminService.createNews(
-        eventType: 'rumor',
-        text: _textController.text.trim(),
-        extraData: {
-          'chips': chipsData,
-          'source': _source,
-        },
-      );
+      final extraData = <String, dynamic>{
+        'chips': chipsData,
+        'source': _source,
+      };
+
+      if (_isEditing) {
+        await AdminService.updateNews(
+          newsId: widget.initialNews!.id,
+          text: _textController.text.trim(),
+          extraData: extraData,
+        );
+      } else {
+        await AdminService.createNews(
+          eventType: 'rumor',
+          text: _textController.text.trim(),
+          extraData: extraData,
+        );
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Слух создан')
+          content: Text(_isEditing ? 'Сохранено' : 'Слух создан'),
         ),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       debugPrint('RumorPage._save error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Не удалось создать слух')
+          content: Text(
+            _isEditing ? 'Не удалось сохранить' : 'Не удалось создать слух',
+          ),
         ),
       );
     } finally {
@@ -147,19 +245,21 @@ class _RumorPageState extends State<RumorPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Слухи')),
+        appBar: AppBar(
+          title: Text(_isEditing ? 'Редактировать слух' : 'Слухи'),
+        ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Картинки (До 10-ти)',
+                'Картинки (до 10-ти)',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               NewsImageGrid(
-                imagePaths: _imagePaths,
+                images: _images,
                 onAdd: _pickImages,
                 onRemove: _removeImage,
                 maxImages: _maxImages,
@@ -238,7 +338,7 @@ class _RumorPageState extends State<RumorPage> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Сохранить'),
+                      : Text(_isEditing ? 'Сохранить' : 'Создать'),
                 ),
               ),
             ],

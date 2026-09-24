@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/chip.dart';
 import 'package:lays_rating/services/auth_service.dart';
-import 'package:lays_rating/widgets/chips/chip_details_page.dart';
 
 const double _imageWidth = 100;
 const double _imageHeight = 130;
@@ -12,11 +11,11 @@ class ChipCompactCard extends StatelessWidget {
   const ChipCompactCard({
     super.key,
     required this.chip,
-    this.onReturn,
+    this.onTap,
   });
 
   final LaysChip chip;
-  final VoidCallback? onReturn;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -26,15 +25,7 @@ class ChipCompactCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChipDetailsPage(chipId: chip.id),
-            ),
-          );
-          onReturn?.call();
-        },
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
@@ -45,7 +36,9 @@ class ChipCompactCard extends StatelessWidget {
                   '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
                   width: _imageWidth,
                   height: _imageHeight,
-                  cacheWidth: (_imageWidth * MediaQuery.devicePixelRatioOf(context)).round(),
+                  cacheWidth:
+                      (_imageWidth * MediaQuery.devicePixelRatioOf(context))
+                          .round(),
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) return child;
@@ -87,7 +80,6 @@ class ChipCompactCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          // height: 1.1,
                         ),
                       ),
                       const SizedBox(height: 6),

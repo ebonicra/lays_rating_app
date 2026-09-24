@@ -16,11 +16,7 @@ class PollContent extends StatelessWidget {
   });
 
   final NewsItem item;
-
-  /// Колбэк при голосовании (индекс варианта).
   final ValueChanged<int> onVote;
-
-  /// Колбэк при отмене голоса.
   final VoidCallback onRemoveVote;
 
   @override
@@ -32,7 +28,6 @@ class PollContent extends StatelessWidget {
 
     final hasVoted = poll.myVote != null;
     final hasImages = poll.options.any((o) => o.imagePath != null);
-    final imageSize = _imageSize(poll.options.length);
 
     final paths = poll.options
       .where((o) => o.imagePath != null)
@@ -69,8 +64,6 @@ class PollContent extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         if (hasImages) ...[
-
-
           NewsImagesCarousel(imagePaths: paths)
         ],
         const SizedBox(height: 12),
@@ -85,6 +78,7 @@ class PollContent extends StatelessWidget {
             onTap: hasVoted ? null : () => onVote(index),
           );
         }),
+        const SizedBox(height: 6),
         if (item.text != null && item.text!.isNotEmpty)
           Center(
             child: Text(

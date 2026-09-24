@@ -43,6 +43,18 @@ class AdminService {
     return (json as Map<String, dynamic>)['id'] as int;
   }
 
+  static Future<void> updateNews({
+    required int newsId,
+    String? text,
+    Map<String, dynamic>? extraData,
+  }) async {
+    final body = <String, dynamic>{};
+    if (text != null) body['text'] = text;
+    if (extraData != null) body['extra_data'] = extraData;
+
+    await _putJson('/admin/news/$newsId', body: body);
+  }
+
   static Future<void> deleteNews(int newsId) async {
     await _deleteJson('/admin/news/$newsId');
   }
@@ -107,6 +119,32 @@ class AdminService {
         _extractError(response, 'Ошибка запроса: $path'),
       );
     }
+    final text = utf8.decode(response.bodyBytes);
+    if (text.isEmpty) return null;
+    return jsonDecode(text);
+  }
+
+  static Future<dynamic> _putJson(
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
+    final token = await _getToken();
+
+    final response = await http
+        .put(
+          Uri.parse('${AuthService.baseUrl}$path'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: body != null ? jsonEncode(body) : null,
+        )
+        .timeout(_timeout);
+
+    if (response.statusCode != 200) {
+      throw Exception(_extractError(response, 'Ошибка запроса: $path'));
+    }
+
     final text = utf8.decode(response.bodyBytes);
     if (text.isEmpty) return null;
     return jsonDecode(text);

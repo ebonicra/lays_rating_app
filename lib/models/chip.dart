@@ -1,6 +1,5 @@
 import 'package:lays_rating/models/chip_type.dart';
 
-
 class ChipRating {
   const ChipRating({
     required this.average,
@@ -17,6 +16,18 @@ class ChipRating {
       average: (json['average'] as num?)?.toDouble() ?? 0.0,
       count: (json['count'] as num?)?.toInt() ?? 0,
       userRating: (json['user_rating'] as num?)?.toInt(),
+    );
+  }
+
+  ChipRating copyWith({
+    double? average,
+    int? count,
+    int? userRating,
+  }) {
+    return ChipRating(
+      average: average ?? this.average,
+      count: count ?? this.count,
+      userRating: userRating ?? this.userRating,
     );
   }
 }
@@ -75,21 +86,35 @@ class LaysChip {
     );
   }
 
-  LaysChip copyWith({ChipRating? rating}) {
+  LaysChip copyWith({
+    int? id,
+    String? name,
+    ChipType? category,
+    String? description,
+    String? imagePath,
+    bool? available,
+    ChipRating? rating,
+    String? collection,
+    String? country,
+    int? releaseYear,
+    int? commentCount,
+    bool? isFavorite,
+    bool? isTried,
+  }) {
     return LaysChip(
-      id: id,
-      name: name,
-      category: category,
-      description: description,
-      imagePath: imagePath,
-      available: available,
-      collection: collection,
-      country: country,
-      releaseYear: releaseYear,
-      commentCount: commentCount,
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      description: description ?? this.description,
+      imagePath: imagePath ?? this.imagePath,
+      available: available ?? this.available,
       rating: rating ?? this.rating,
-      isFavorite: isFavorite,
-      isTried: isTried,
+      collection: collection ?? this.collection,
+      country: country ?? this.country,
+      releaseYear: releaseYear ?? this.releaseYear,
+      commentCount: commentCount ?? this.commentCount,
+      isFavorite: isFavorite ?? this.isFavorite,
+      isTried: isTried ?? this.isTried,
     );
   }
 }

@@ -11,22 +11,39 @@ class ChipsController extends ChangeNotifier {
   List<LaysChip> _allChips = [];
   List<LaysChip> _visibleChips = [];
 
-  bool _isLoading = true;
+  bool _isLoading = true;      // первая загрузка — показываем спиннер на весь экран
+  bool _isRefreshing = false;  // повторная — только RefreshIndicator
+
   String _searchQuery = '';
   String _sortField = 'rating';
   bool _sortAscending = false;
 
   List<LaysChip> get visibleChips => List.unmodifiable(_visibleChips);
   bool get isLoading => _isLoading;
+  bool get isRefreshing => _isRefreshing;
   String get searchQuery => _searchQuery;
   String get sortField => _sortField;
   bool get sortAscending => _sortAscending;
 
-
+  /// Первая загрузка (при открытии страницы).
   Future<void> load() async {
     _isLoading = true;
     notifyListeners();
+    await _fetch();
+    _isLoading = false;
+    notifyListeners();
+  }
 
+  /// Pull-to-refresh: не сбрасывает список, не переключает экран в лоадер.
+  Future<void> refresh() async {
+    _isRefreshing = true;
+    notifyListeners();
+    await _fetch();
+    _isRefreshing = false;
+    notifyListeners();
+  }
+
+  Future<void> _fetch() async {
     try {
       final filters = await FiltersService.getFilters();
       final result = await ChipService.fetchChips(
@@ -45,9 +62,9 @@ class ChipsController extends ChangeNotifier {
       }).toList();
 
       _rebuildVisible();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+    } catch (e) {
+      // Тут можно пробросить ошибку или залогировать
+      debugPrint('ChipsController._fetch error: $e');
     }
   }
 
@@ -66,6 +83,27 @@ class ChipsController extends ChangeNotifier {
     }
     _rebuildVisible();
     notifyListeners();
+  }
+
+  bool replaceChip(LaysChip updated) {
+    final index = _allChips.indexWhere((c) => c.id == updated.id);
+    if (index == -1) return false;
+
+    _allChips[index] = updated;
+    _rebuildVisible();
+    notifyListeners();
+
+    return _visibleChips.any((c) => c.id == updated.id);
+  }
+
+  void removeChip(int chipId) {
+    _allChips.removeWhere((c) => c.id == chipId);
+    _rebuildVisible();
+    notifyListeners();
+  }
+
+  int indexOfVisible(int chipId) {
+    return _visibleChips.indexWhere((c) => c.id == chipId);
   }
 
   void _rebuildVisible() {
@@ -87,7 +125,7 @@ class ChipsController extends ChangeNotifier {
         result = a.name.toLowerCase().compareTo(b.name.toLowerCase());
         return _sortAscending ? -result : result;
       case 'date':
-        result = a.id.compareTo(b.id);
+        result = a.releaseYear.compareTo(b.releaseYear);
         return _sortAscending ? result : -result;
       case 'rating':
       default:

@@ -4,21 +4,15 @@ import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/widgets/common/full_screen_gallery.dart';
 
 
-/// Карусель изображений новости.
-///
-/// - Одна картинка — крупная по центру.
-/// - Несколько — горизонтальная карусель с одинаковым размером.
-/// - Тап — полноэкранный просмотр с листанием.
+/// Карусель изображений новости
 class NewsImagesCarousel extends StatelessWidget {
   const NewsImagesCarousel({
     super.key,
     required this.imagePaths,
   });
 
-  /// Список имён файлов (без URL и префикса `/news/images/`).
   final List<String> imagePaths;
-
-  static const double _singleImageSize = 220;
+  static const double _singleImageSize = 240;
   static const double _carouselHeight = 150;
   static const double _carouselItemWidth = 150;
 

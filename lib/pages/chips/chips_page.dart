@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'package:lays_rating/models/chip.dart';
 import 'package:lays_rating/pages/chips/chips_controller.dart';
 import 'package:lays_rating/widgets/chips/chip_compact_card.dart';
+import 'package:lays_rating/widgets/chips/chip_details_page.dart';
+import 'package:lays_rating/widgets/chips/chip_details_result.dart';
 import 'package:lays_rating/widgets/chips/chips_sort_menu.dart';
 
 /// Страница со списком чипсов: поиск, сортировка и переход к деталям.
@@ -16,6 +19,7 @@ class ChipsPage extends StatefulWidget {
 class _ChipsPageState extends State<ChipsPage> {
   late final ChipsController _controller;
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool _isSearching = false;
 
   @override
@@ -29,6 +33,7 @@ class _ChipsPageState extends State<ChipsPage> {
   void dispose() {
     _controller.dispose();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -40,6 +45,24 @@ class _ChipsPageState extends State<ChipsPage> {
       }
       _isSearching = !_isSearching;
     });
+  }
+
+  Future<void> _openChip(LaysChip chip) async {
+    final result = await Navigator.push<ChipDetailsResult>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChipDetailsPage(chipId: chip.id),
+      ),
+    );
+
+    if (!mounted || result == null) return;
+
+    switch (result) {
+      case ChipUpdated(:final chip):
+        _controller.replaceChip(chip);
+      case ChipDeleted(:final chipId):
+        _controller.removeChip(chipId);
+    }
   }
 
   @override
@@ -85,7 +108,10 @@ class _ChipsPageState extends State<ChipsPage> {
               ),
             ],
           ),
-          body: _buildBody(context),
+          body: RefreshIndicator(
+            onRefresh: _controller.refresh,
+            child: _buildBody(context),
+          ),
         );
       },
     );
@@ -112,12 +138,14 @@ class _ChipsPageState extends State<ChipsPage> {
     }
 
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.only(top: 4),
       itemCount: chips.length,
       itemBuilder: (context, index) {
+        final chip = chips[index];
         return ChipCompactCard(
-          chip: chips[index],
-          onReturn: _controller.load,
+          chip: chip,
+          onTap: () => _openChip(chip),
         );
       },
     );

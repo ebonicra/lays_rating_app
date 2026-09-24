@@ -16,6 +16,7 @@ class ChipDetailsView extends StatelessWidget {
     required this.onRatingChanged,
     required this.onFavoriteChanged,
     required this.onTriedChanged,
+    this.onCommentsCountChanged,
     this.onAverageRatingLongPress,
   });
 
@@ -25,6 +26,7 @@ class ChipDetailsView extends StatelessWidget {
   final ValueChanged<int> onRatingChanged;
   final VoidCallback onFavoriteChanged;
   final VoidCallback onTriedChanged;
+  final ValueChanged<int>? onCommentsCountChanged;
   final VoidCallback? onAverageRatingLongPress;
 
   @override
@@ -86,7 +88,8 @@ class ChipDetailsView extends StatelessWidget {
           // Комментарии
           CommentsSection(
             key: commentsKey,
-            chipId: chip.id
+            chipId: chip.id,
+            onCommentsCountChanged: onCommentsCountChanged,
           ),
         ],
       ),

@@ -11,9 +11,11 @@ class CommentsSection extends StatefulWidget {
   const CommentsSection({
     super.key,
     required this.chipId,
+    this.onCommentsCountChanged,
   });
 
   final int chipId;
+  final ValueChanged<int>? onCommentsCountChanged;
 
   @override
   State<CommentsSection> createState() => CommentsSectionState();
@@ -55,6 +57,7 @@ class CommentsSectionState extends State<CommentsSection> {
         _totalCount = response.totalCount;
         _isLoading = false;
       });
+      widget.onCommentsCountChanged?.call(response.totalCount);
     } catch (e) {
       debugPrint('CommentsSection._loadComments error: $e');
       if (!mounted) return;
@@ -85,6 +88,7 @@ class CommentsSectionState extends State<CommentsSection> {
       _comments?.removeWhere((c) => c.id == commentId);
       if (_totalCount > 0) _totalCount--;
     });
+    widget.onCommentsCountChanged?.call(_totalCount);
   }
 
   Future<void> _createComment(String text) async {
@@ -99,6 +103,7 @@ class CommentsSectionState extends State<CommentsSection> {
         _comments = [newComment, ...?_comments];
         _totalCount++;
       });
+      widget.onCommentsCountChanged?.call(_totalCount);
     } catch (e) {
       debugPrint('CommentsSection._createComment error: $e');
       if (!mounted) return;

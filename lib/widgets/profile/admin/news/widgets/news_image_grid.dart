@@ -2,25 +2,31 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:lays_rating/models/news_image.dart';
+import 'package:lays_rating/services/auth_service.dart';
+
 const double _itemSize = 160;
 const double _gap = 8;
 
-/// Горизонтальная карусель картинок для формы новости
+/// Горизонтальная карусель картинок для формы новости.
+///
+/// Работает с [NewsImage] — локальными (ещё не загруженными)
+/// и серверными (уже на сервере).
 class NewsImageGrid extends StatelessWidget {
   const NewsImageGrid({
     super.key,
-    required this.imagePaths,
+    required this.images,
     required this.onAdd,
     required this.onRemove,
     this.maxImages = 10,
   });
 
-  final List<String> imagePaths;
+  final List<NewsImage> images;
   final VoidCallback onAdd;
   final ValueChanged<int> onRemove;
   final int maxImages;
 
-  bool get _canAddMore => imagePaths.length < maxImages;
+  bool get _canAddMore => images.length < maxImages;
 
   @override
   Widget build(BuildContext context) {
@@ -29,14 +35,14 @@ class NewsImageGrid extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.zero,
-        itemCount: imagePaths.length + (_canAddMore ? 1 : 0),
+        itemCount: images.length + (_canAddMore ? 1 : 0),
         separatorBuilder: (_, __) => const SizedBox(width: _gap),
         itemBuilder: (context, index) {
-          if (index == imagePaths.length) {
+          if (index == images.length) {
             return _AddButton(onTap: onAdd);
           }
           return _ImagePreview(
-            path: imagePaths[index],
+            image: images[index],
             onRemove: () => onRemove(index),
           );
         },
@@ -47,11 +53,11 @@ class NewsImageGrid extends StatelessWidget {
 
 class _ImagePreview extends StatelessWidget {
   const _ImagePreview({
-    required this.path,
+    required this.image,
     required this.onRemove,
   });
 
-  final String path;
+  final NewsImage image;
   final VoidCallback onRemove;
 
   @override
@@ -60,12 +66,7 @@ class _ImagePreview extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: Image.file(
-            File(path),
-            width: _itemSize,
-            height: _itemSize,
-            fit: BoxFit.cover,
-          ),
+          child: _buildImage(context),
         ),
         Positioned(
           top: 2,
@@ -87,6 +88,52 @@ class _ImagePreview extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildImage(BuildContext context) {
+    if (image.isLocal) {
+      return Image.file(
+        File(image.localPath!),
+        width: _itemSize,
+        height: _itemSize,
+        fit: BoxFit.cover,
+      );
+    }
+
+    // remote
+    final url = '${AuthService.baseUrl}/news/images/${image.remotePath}';
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Image.network(
+      url,
+      width: _itemSize,
+      height: _itemSize,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return Container(
+          width: _itemSize,
+          height: _itemSize,
+          color: colorScheme.surfaceContainerHighest,
+          child: const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: _itemSize,
+          height: _itemSize,
+          color: colorScheme.surfaceContainerHighest,
+          child: Center(
+            child: Icon(
+              Icons.broken_image,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        );
+      },
     );
   }
 }

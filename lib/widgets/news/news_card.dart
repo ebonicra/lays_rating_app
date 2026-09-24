@@ -8,6 +8,9 @@ import 'package:lays_rating/services/news_service.dart';
 import 'package:lays_rating/services/user_service.dart';
 import 'package:lays_rating/widgets/news/content/news_content.dart';
 import 'package:lays_rating/widgets/news/delete_news_dialog.dart';
+import 'package:lays_rating/widgets/profile/admin/news/admin_post_page.dart';
+import 'package:lays_rating/widgets/profile/admin/news/poll_page.dart';
+import 'package:lays_rating/widgets/profile/admin/news/rumor_page.dart';
 
 
 class NewsCard extends StatefulWidget {
@@ -38,7 +41,7 @@ class _NewsCardState extends State<NewsCard> {
 
   bool get _isAdmin => UserService.currentUser?.isAdmin ?? false;
 
-  bool get _canDelete {
+  bool get _canManage {
     final type = item.eventType;
     return type == 'admin_post' || type == 'rumor' || type == 'poll';
   }
@@ -56,7 +59,7 @@ class _NewsCardState extends State<NewsCard> {
     }
   }
 
-  // ===== РЕАКЦИИ НА КОММЕНТАРИЙ =====
+  // ===== РЕАКЦИИ =====
 
   Future<void> _handleLike() async {
     if (_isReactionLoading) return;
@@ -150,7 +153,7 @@ class _NewsCardState extends State<NewsCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Не удалось проголосовать')
+          content: Text('Не удалось проголосовать'),
         ),
       );
     }
@@ -185,7 +188,7 @@ class _NewsCardState extends State<NewsCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Не удалось отменить голос')
+          content: Text('Не удалось отменить голос'),
         ),
       );
     }
@@ -201,7 +204,10 @@ class _NewsCardState extends State<NewsCard> {
       await AdminService.deleteNews(item.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Новость удалена')),
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Новость удалена'),
+        ),
       );
       widget.onDeleted?.call();
     } catch (e) {
@@ -210,9 +216,37 @@ class _NewsCardState extends State<NewsCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Не удалось удалить новость')
+          content: Text('Не удалось удалить новость'),
         ),
       );
+    }
+  }
+
+  // ===== РЕДАКТИРОВАНИЕ (АДМИН) =====
+
+  Future<void> _openEditNews() async {
+    final Widget page;
+    switch (item.eventType) {
+      case 'admin_post':
+        page = AdminPostPage(initialNews: item);
+        break;
+      case 'rumor':
+        page = RumorPage(initialNews: item);
+        break;
+      case 'poll':
+        page = PollPage(initialNews: item);
+        break;
+      default:
+        return;
+    }
+
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => page),
+    );
+
+    if (updated == true && mounted) {
+      widget.onDeleted?.call();
     }
   }
 
@@ -220,6 +254,8 @@ class _NewsCardState extends State<NewsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Stack(
@@ -238,17 +274,30 @@ class _NewsCardState extends State<NewsCard> {
             onVote: _handleVote,
             onRemoveVote: _removeVote,
           ),
-          if (_isAdmin && _canDelete)
+          if (_isAdmin && _canManage)
             Positioned(
               top: 0,
               right: 0,
-              child: GestureDetector(
-                onTap: _deleteNews,
-                child: Icon(
-                  Icons.delete_outline,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: _openEditNews,
+                    child: Icon(
+                      Icons.edit_outlined,
+                      size: 16,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: _deleteNews,
+                    child: Icon(
+                      Icons.delete_outline,
+                      size: 16,
+                      color: colorScheme.error,
+                    ),
+                  ),
+                ],
               ),
             ),
         ],

@@ -1,26 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:lays_rating/models/news_image.dart';
+import 'package:lays_rating/models/news_item.dart';
 import 'package:lays_rating/services/admin_service.dart';
 import 'package:lays_rating/widgets/profile/admin/news/widgets/news_image_grid.dart';
 
-/// Страница создания обычного поста (текст + картинки).
+/// Страница создания / редактирования обычного поста (текст + картинки).
 class AdminPostPage extends StatefulWidget {
-  const AdminPostPage({super.key});
+  const AdminPostPage({
+    super.key,
+    this.initialNews,
+  });
+
+  final NewsItem? initialNews;
 
   @override
   State<AdminPostPage> createState() => _AdminPostPageState();
 }
 
 class _AdminPostPageState extends State<AdminPostPage> {
-  final _textController = TextEditingController();
-  final List<String> _imagePaths = [];
-  bool _isSaving = false;
-
   static const int _maxImages = 10;
 
-  bool get _isDirty =>
-      _textController.text.trim().isNotEmpty || _imagePaths.isNotEmpty;
+  late final TextEditingController _textController;
+  final List<NewsImage> _images = [];
+  bool _isSaving = false;
+
+  bool get _isEditing => widget.initialNews != null;
+
+  bool get _canSave =>
+      _textController.text.trim().isNotEmpty || _images.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    final news = widget.initialNews;
+
+    _textController = TextEditingController(text: news?.text ?? '');
+
+    // Загружаем существующие картинки (только remote)
+    if (news != null) {
+      final chips = news.extraData?['chips'] as List?;
+      if (chips != null) {
+        for (final c in chips) {
+          if (c is Map) {
+            final path = c['image_path'] as String?;
+            if (path != null && path.isNotEmpty) {
+              _images.add(NewsImage.remote(path));
+            }
+          }
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -30,44 +62,86 @@ class _AdminPostPageState extends State<AdminPostPage> {
 
   Future<void> _pickImages() async {
     final picker = ImagePicker();
-    final images = await picker.pickMultiImage(
+    final picked = await picker.pickMultiImage(
       imageQuality: 80,
       maxWidth: 1080,
       maxHeight: 1080,
     );
 
-    if (images.isEmpty || !mounted) return;
+    if (picked.isEmpty || !mounted) return;
 
     setState(() {
-      final remaining = _maxImages - _imagePaths.length;
-      final toAdd = images.take(remaining).map((img) => img.path);
-      _imagePaths.addAll(toAdd);
+      final remaining = _maxImages - _images.length;
+      _images.addAll(
+        picked.take(remaining).map((img) => NewsImage.local(img.path)),
+      );
     });
   }
 
   void _removeImage(int index) {
-    setState(() => _imagePaths.removeAt(index));
+    setState(() => _images.removeAt(index));
+  }
+
+  bool _isDirty() {
+    final news = widget.initialNews;
+
+    // Создание — dirty, если что-то есть
+    if (news == null) {
+      return _textController.text.trim().isNotEmpty || _images.isNotEmpty;
+    }
+
+    // Редактирование
+    final originalText = (news.text ?? '').trim();
+    if (_textController.text.trim() != originalText) return true;
+
+    // Если появились новые локальные картинки — dirty
+    if (_images.any((i) => i.isLocal)) return true;
+
+    // Если количество серверных картинок изменилось — dirty
+    final originalCount = (news.extraData?['chips'] as List?)?.length ?? 0;
+    return _images.length != originalCount;
   }
 
   Future<bool> _confirmExit() async {
-    if (!_isDirty) return true;
+    if (!_isDirty()) return true;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Выйти без сохранения?'),
-        content: const Text('Изменения не сохранятся.'),
+        icon: Icon(
+          Icons.warning_amber_rounded,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        title: const Text(
+          'Выйти без сохранения?',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Все несохранённые изменения будут потеряны.',
+          textAlign: TextAlign.center,
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Остаться'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Выйти'),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Остаться'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    foregroundColor: Theme.of(context).colorScheme.onError,
+                  ),
+                  child: const Text('Выйти'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -77,37 +151,65 @@ class _AdminPostPageState extends State<AdminPostPage> {
   }
 
   Future<void> _save() async {
-    setState(() => _isSaving = true);
-
-    try {
-      // Загружаем картинки
-      final chipsData = <Map<String, dynamic>>[];
-      for (final path in _imagePaths) {
-        final imagePath = await AdminService.uploadNewsImage(path);
-        chipsData.add({'image_path': imagePath});
-      }
-
-      await AdminService.createNews(
-        eventType: 'admin_post',
-        text: _textController.text.trim(),
-        extraData: chipsData.isNotEmpty ? {'chips': chipsData} : null,
-      );
-
-      if (!mounted) return;
+    if (!_canSave) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Новость создана')
+          content: Text('Добавьте текст или картинку'),
         ),
       );
-      Navigator.pop(context);
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final chipsData = <Map<String, dynamic>>[];
+
+      // Обрабатываем картинки: локальные — загружаем, серверные — как есть
+      for (final image in _images) {
+        if (image.isRemote) {
+          chipsData.add({'image_path': image.remotePath});
+        } else {
+          final uploaded =
+              await AdminService.uploadNewsImage(image.localPath!);
+          chipsData.add({'image_path': uploaded});
+        }
+      }
+
+      final extraData = chipsData.isNotEmpty ? {'chips': chipsData} : null;
+
+      if (_isEditing) {
+        await AdminService.updateNews(
+          newsId: widget.initialNews!.id,
+          text: _textController.text.trim(),
+          extraData: extraData,
+        );
+      } else {
+        await AdminService.createNews(
+          eventType: 'admin_post',
+          text: _textController.text.trim(),
+          extraData: extraData,
+        );
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(_isEditing ? 'Сохранено' : 'Новость создана'),
+        ),
+      );
+      Navigator.pop(context, true);
     } catch (e) {
       debugPrint('AdminPostPage._save error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Не удалось создать новость')
+          content: Text(
+            _isEditing ? 'Не удалось сохранить' : 'Не удалось создать новость',
+          ),
         ),
       );
     } finally {
@@ -127,7 +229,9 @@ class _AdminPostPageState extends State<AdminPostPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Обычный пост')),
+        appBar: AppBar(
+          title: Text(_isEditing ? 'Редактировать пост' : 'Обычный пост'),
+        ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -139,33 +243,28 @@ class _AdminPostPageState extends State<AdminPostPage> {
               ),
               const SizedBox(height: 6),
               NewsImageGrid(
-                imagePaths: _imagePaths,
+                images: _images,
                 onAdd: _pickImages,
                 onRemove: _removeImage,
                 maxImages: _maxImages,
               ),
               const SizedBox(height: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Текст новости',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              const Text(
+                'Текст новости',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _textController,
+                textCapitalization: TextCapitalization.sentences,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  hintText: 'Текст новости...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: _textController,
-                    textCapitalization: TextCapitalization.sentences,
-                    maxLines: 5,
-                    decoration: InputDecoration(
-                      hintText: 'Тыры-пыры',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                ],
-              )
+                ),
+              ),
             ],
           ),
         ),
@@ -208,7 +307,7 @@ class _AdminPostPageState extends State<AdminPostPage> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Сохранить'),
+                      : Text(_isEditing ? 'Сохранить' : 'Создать'),
                 ),
               ),
             ],
