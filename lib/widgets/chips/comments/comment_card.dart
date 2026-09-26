@@ -9,6 +9,8 @@ import 'package:lays_rating/utils/initials.dart';
 import 'package:lays_rating/utils/date_formatter.dart';
 import 'package:lays_rating/widgets/common/rating_badge.dart';
 import 'package:lays_rating/widgets/common/reaction_button.dart';
+import 'package:lays_rating/utils/reaction_loaders.dart';
+import 'package:lays_rating/widgets/common/reactions_sheet.dart';
 
 import 'delete_comment_dialog.dart';
 import 'edit_comment_dialog.dart';
@@ -92,6 +94,14 @@ class _CommentCardState extends State<CommentCard> {
     }
 
     if (mounted) setState(() => _isLoading = false);
+  }
+
+  void _openReactionsSheet({ReactionsTab? tab}) {
+    ReactionsSheet.show(
+      context,
+      initialTab: tab ?? ReactionsTab.likes,
+      loader: () => loadCommentReactions(_comment.id),
+    );
   }
 
   Future<void> _handleDislike() async {
@@ -314,6 +324,7 @@ class _CommentCardState extends State<CommentCard> {
           activeColor: Colors.red,
           isLoading: _isLoading,
           onTap: _handleLike,
+          onLongPress: () => _openReactionsSheet(tab: ReactionsTab.likes),
         ),
         const SizedBox(width: 6),
         ReactionButton(
@@ -324,6 +335,7 @@ class _CommentCardState extends State<CommentCard> {
           activeColor: Colors.brown,
           isLoading: _isLoading,
           onTap: _handleDislike,
+          onLongPress: () => _openReactionsSheet(tab: ReactionsTab.dislikes),
         ),
         const Spacer(),
         if (_isMyComment) ...[

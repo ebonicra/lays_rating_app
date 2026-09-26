@@ -62,7 +62,19 @@ class PollContent extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
+        if (item.text != null && item.text!.isNotEmpty)
+          Center(
+            child: Text(
+              item.text!,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.3,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
         if (hasImages) ...[
           NewsImagesCarousel(imagePaths: paths)
         ],
@@ -78,18 +90,6 @@ class PollContent extends StatelessWidget {
             onTap: hasVoted ? null : () => onVote(index),
           );
         }),
-        const SizedBox(height: 6),
-        if (item.text != null && item.text!.isNotEmpty)
-          Center(
-            child: Text(
-              item.text!,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.3,
-                fontSize: 16,
-              ),
-            ),
-          ),
         const SizedBox(height: 10),
         Row(
           children: [
@@ -100,29 +100,32 @@ class PollContent extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 4), 
             if (hasVoted)
-              TextButton.icon(
+              TextButton(
                 onPressed: onRemoveVote,
-                icon: Icon(
-                  Icons.close_rounded,
-                  size: 16,
-                  color: theme.colorScheme.error,
-                ),
-                label: Text(
-                  'Отменить голос',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.error,
-                  ),
-                ),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.close_rounded,
+                      size: 12,
+                      color: theme.colorScheme.error,
+                    ),
+                    Text(
+                      'Отменить голос',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],

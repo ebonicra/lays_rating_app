@@ -11,7 +11,8 @@ import 'package:lays_rating/widgets/news/delete_news_dialog.dart';
 import 'package:lays_rating/widgets/profile/admin/news/admin_post_page.dart';
 import 'package:lays_rating/widgets/profile/admin/news/poll_page.dart';
 import 'package:lays_rating/widgets/profile/admin/news/rumor_page.dart';
-
+import 'package:lays_rating/widgets/common/reactions_sheet.dart';
+import 'package:lays_rating/utils/reaction_loaders.dart';
 
 class NewsCard extends StatefulWidget {
   const NewsCard({
@@ -19,11 +20,16 @@ class NewsCard extends StatefulWidget {
     required this.item,
     this.onDeleted,
     this.onVoted,
+    this.onReacted,
   });
 
   final NewsItem item;
   final VoidCallback? onDeleted;
   final ValueChanged<NewsItem>? onVoted;
+
+  /// Вызывается после успешной реакции на НОВОСТЬ
+  /// (admin_post / rumor / poll), чтобы родитель мог обновить список.
+  final ValueChanged<NewsItem>? onReacted;
 
   @override
   State<NewsCard> createState() => _NewsCardState();
@@ -31,11 +37,13 @@ class NewsCard extends StatefulWidget {
 
 class _NewsCardState extends State<NewsCard> {
   bool _isExpanded = false;
+  bool _isReactionLoading = false;
+
+  // Локальное состояние реакций — чтобы UI отзывался мгновенно.
   bool _isLiked = false;
   bool _isDisliked = false;
   int _likesCount = 0;
   int _dislikesCount = 0;
-  bool _isReactionLoading = false;
 
   NewsItem get item => widget.item;
 
@@ -46,80 +54,183 @@ class _NewsCardState extends State<NewsCard> {
     return type == 'admin_post' || type == 'rumor' || type == 'poll';
   }
 
+  /// Реагируемая ли это НОВОСТЬ (не комментарий).
+  bool get _isReactableNews {
+    final type = item.eventType;
+    return type == 'admin_post' || type == 'rumor' || type == 'poll';
+  }
+
+  /// Комментарий ли это (friend_comment).
+  bool get _isComment {
+    return item.eventType == 'friend_comment';
+  }
+
+  void _openReactionsSheet({ReactionsTab? tab}) {
+    ReactionsSheet.show(
+      context,
+      initialTab: tab ?? ReactionsTab.likes,
+      loader: () => loadNewsReactions(item.id),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    _likesCount = item.likesCount ?? 0;
-    _dislikesCount = item.dislikesCount ?? 0;
+    _syncFromItem();
+  }
 
-    if (item.myReaction == true) {
-      _isLiked = true;
-    } else if (item.myReaction == false) {
-      _isDisliked = true;
+  @override
+  void didUpdateWidget(covariant NewsCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Если родитель пересоздал карточку с новыми данными — синхронизируемся.
+    if (oldWidget.item != widget.item) {
+      _syncFromItem();
+    }
+  }
+
+  void _syncFromItem() {
+    if (_isReactableNews) {
+      _likesCount = item.newsLikesCount;
+      _dislikesCount = item.newsDislikesCount;
+      _isLiked = item.myNewsReaction == true;
+      _isDisliked = item.myNewsReaction == false;
+    } else if (_isComment) {
+      _likesCount = item.commentLikesCount;
+      _dislikesCount = item.commentDislikesCount;
+      _isLiked = item.myCommentReaction == true;
+      _isDisliked = item.myCommentReaction == false;
+    } else {
+      _likesCount = 0;
+      _dislikesCount = 0;
+      _isLiked = false;
+      _isDisliked = false;
     }
   }
 
   // ===== РЕАКЦИИ =====
 
-  Future<void> _handleLike() async {
+  Future<void> _handleLike() => _handleReaction(isLike: true);
+
+  Future<void> _handleDislike() => _handleReaction(isLike: false);
+
+  Future<void> _handleReaction({required bool isLike}) async {
     if (_isReactionLoading) return;
+
+    // Куда слать — зависит от типа новости.
+    if (_isComment) {
+      await _handleCommentReaction(isLike: isLike);
+    } else if (_isReactableNews) {
+      await _handleNewsReaction(isLike: isLike);
+    }
+    // иначе — реакций нет, ничего не делаем
+  }
+
+  /// Реакция на комментарий (через CommentsService).
+  Future<void> _handleCommentReaction({required bool isLike}) async {
+    final commentId = item.commentId;
+    if (commentId == null) return;
+
     setState(() => _isReactionLoading = true);
 
     try {
-      if (_isLiked) {
-        await CommentsService.removeReaction(commentId: item.commentId!);
+      final wasSameReaction = isLike ? _isLiked : _isDisliked;
+
+      if (wasSameReaction) {
+        await CommentsService.removeReaction(commentId: commentId);
         setState(() {
-          _isLiked = false;
-          _likesCount--;
+          if (isLike) {
+            _isLiked = false;
+            _likesCount = (_likesCount - 1).clamp(0, 1 << 31);
+          } else {
+            _isDisliked = false;
+            _dislikesCount = (_dislikesCount - 1).clamp(0, 1 << 31);
+          }
         });
       } else {
         await CommentsService.setReaction(
-          commentId: item.commentId!,
-          isLike: true,
+          commentId: commentId,
+          isLike: isLike,
         );
         setState(() {
-          if (_isDisliked) {
-            _isDisliked = false;
-            _dislikesCount--;
+          if (isLike) {
+            if (_isDisliked) {
+              _isDisliked = false;
+              _dislikesCount = (_dislikesCount - 1).clamp(0, 1 << 31);
+            }
+            _isLiked = true;
+            _likesCount++;
+          } else {
+            if (_isLiked) {
+              _isLiked = false;
+              _likesCount = (_likesCount - 1).clamp(0, 1 << 31);
+            }
+            _isDisliked = true;
+            _dislikesCount++;
           }
-          _isLiked = true;
-          _likesCount++;
         });
       }
     } catch (e) {
-      debugPrint('NewsCard._handleLike error: $e');
+      debugPrint('NewsCard._handleCommentReaction error: $e');
     }
 
     if (mounted) setState(() => _isReactionLoading = false);
   }
 
-  Future<void> _handleDislike() async {
-    if (_isReactionLoading) return;
+
+
+  void _openCommentReactionsSheet(
+    int commentId, {
+    ReactionsTab? tab,
+  }) {
+    ReactionsSheet.show(
+      context,
+      initialTab: tab ?? ReactionsTab.likes,
+      loader: () async {
+        final data = await CommentsService.getCommentReactions(commentId);
+        return ReactionsData(
+          likes: data.likes.map((u) => u.toReactionUser()).toList(),
+          dislikes: data.dislikes.map((u) => u.toReactionUser()).toList(),
+        );
+      },
+    );
+  }
+
+  /// Реакция на новость (через NewsService).
+  Future<void> _handleNewsReaction({required bool isLike}) async {
     setState(() => _isReactionLoading = true);
 
     try {
-      if (_isDisliked) {
-        await CommentsService.removeReaction(commentId: item.commentId!);
-        setState(() {
-          _isDisliked = false;
-          _dislikesCount--;
-        });
-      } else {
-        await CommentsService.setReaction(
-          commentId: item.commentId!,
-          isLike: false,
-        );
-        setState(() {
-          if (_isLiked) {
-            _isLiked = false;
-            _likesCount--;
-          }
-          _isDisliked = true;
-          _dislikesCount++;
-        });
-      }
+      final result = await NewsService.setNewsReaction(
+        item.id,
+        isLike: isLike,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _likesCount = result.likesCount;
+        _dislikesCount = result.dislikesCount;
+        _isLiked = result.myReaction == true;
+        _isDisliked = result.myReaction == false;
+      });
+
+      // Прокидываем обновлённый item наверх, чтобы родитель обновил список.
+      widget.onReacted?.call(
+        item.copyWith(
+          newsLikesCount: result.likesCount,
+          newsDislikesCount: result.dislikesCount,
+          myNewsReaction: result.myReaction,
+          clearNewsReaction: result.myReaction == null,
+        ),
+      );
     } catch (e) {
-      debugPrint('NewsCard._handleDislike error: $e');
+      debugPrint('NewsCard._handleNewsReaction error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось сохранить реакцию'),
+        ),
+      );
     }
 
     if (mounted) setState(() => _isReactionLoading = false);
@@ -194,7 +305,7 @@ class _NewsCardState extends State<NewsCard> {
     }
   }
 
-  // ===== УДАЛЕНИЕ (АДМИН) =====
+  // ===== УДАЛЕНИЕ / РЕДАКТИРОВАНИЕ (АДМИН) =====
 
   Future<void> _deleteNews() async {
     final confirmed = await DeleteNewsDialog.show(context);
@@ -221,8 +332,6 @@ class _NewsCardState extends State<NewsCard> {
       );
     }
   }
-
-  // ===== РЕДАКТИРОВАНИЕ (АДМИН) =====
 
   Future<void> _openEditNews() async {
     final Widget page;
@@ -257,7 +366,7 @@ class _NewsCardState extends State<NewsCard> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       child: Stack(
         children: [
           NewsContent(
@@ -273,6 +382,18 @@ class _NewsCardState extends State<NewsCard> {
             onDislike: _handleDislike,
             onVote: _handleVote,
             onRemoveVote: _removeVote,
+            onShowLikes: () => _openReactionsSheet(tab: ReactionsTab.likes),
+            onShowDislikes: () => _openReactionsSheet(tab: ReactionsTab.dislikes),
+            onShowCommentLikes: () {
+              final commentId = item.commentId;
+              if (commentId == null) return;
+              _openCommentReactionsSheet(commentId, tab: ReactionsTab.likes);
+            },
+            onShowCommentDislikes: () {
+              final commentId = item.commentId;
+              if (commentId == null) return;
+              _openCommentReactionsSheet(commentId, tab: ReactionsTab.dislikes);
+            },
           ),
           if (_isAdmin && _canManage)
             Positioned(

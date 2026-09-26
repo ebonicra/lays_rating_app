@@ -15,6 +15,7 @@ import 'package:lays_rating/widgets/profile/profile_logout_button.dart';
 import 'package:lays_rating/widgets/profile/profile_menu_button.dart';
 import 'package:lays_rating/widgets/profile/stats/profile_stats_carousel.dart';
 import 'package:lays_rating/utils/route_observer.dart';
+import 'package:lays_rating/widgets/feedback/feedback_page.dart';
 
 
 class ProfilePage extends StatefulWidget {
@@ -72,6 +73,15 @@ class _ProfilePageState extends State<ProfilePage> with RouteAware {
       MaterialPageRoute(builder: (_) => const LoginPage()),
       (route) => false,
     );
+  }
+
+  Future<void> _openFeedback() async {
+    final sent = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const FeedbackPage()),
+    );
+    // Опционально: если хочешь показать благодарность после отправки,
+    // но FeedbackPage уже сама показывает SnackBar — можно оставить пустым.
   }
 
   Future<void> _showEditProfileDialog() async {
@@ -135,6 +145,7 @@ class _ProfilePageState extends State<ProfilePage> with RouteAware {
         actions: [
           ProfileMenuButton(
             onEdit: _showEditProfileDialog,
+            onFeedback: _openFeedback,
             onDelete: _showDeleteAccountDialog,
           ),
         ],

@@ -35,14 +35,36 @@ class RumorContent extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 4),
+        if (source.isNotEmpty)
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 14,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  source,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 2),
         if (chips.isNotEmpty) ...[
           NewsImagesCarousel(
             imagePaths: chips
                 .map((c) => c['image_path'] as String)
                 .toList(),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
         ],
         if (item.text != null && item.text!.isNotEmpty) ...[
           Center(
@@ -55,26 +77,7 @@ class RumorContent extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
         ],
-        if (source.isNotEmpty)
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 14,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                source,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
       ],
     );
   }

@@ -9,11 +9,18 @@ class NewsItem {
   final NewsChip? chip;
   final int? userRating;
   final Map<String, dynamic>? extraData;
-  final int? commentId;
-  final int? likesCount;
-  final int? dislikesCount;
-  final bool? myReaction;
   final PollData? poll;
+
+  // Комментарий (friend_comment)
+  final int? commentId;
+  final int commentLikesCount;
+  final int commentDislikesCount;
+  final bool? myCommentReaction;
+
+  // Новость (admin_post, rumor, poll)
+  final int newsLikesCount;
+  final int newsDislikesCount;
+  final bool? myNewsReaction;
 
   const NewsItem({
     required this.id,
@@ -24,11 +31,14 @@ class NewsItem {
     this.chip,
     this.userRating,
     this.extraData,
-    this.commentId,
-    this.likesCount,
-    this.dislikesCount,
-    this.myReaction,
     this.poll,
+    this.commentId,
+    this.commentLikesCount = 0,
+    this.commentDislikesCount = 0,
+    this.myCommentReaction,
+    this.newsLikesCount = 0,
+    this.newsDislikesCount = 0,
+    this.myNewsReaction,
   });
 
   factory NewsItem.fromJson(Map<String, dynamic> json) {
@@ -43,15 +53,24 @@ class NewsItem {
       extraData: json['extra_data'] != null
           ? Map<String, dynamic>.from(json['extra_data'])
           : null,
-      commentId: json['comment_id'],
-      likesCount: json['likes_count'],
-      dislikesCount: json['dislikes_count'],
-      myReaction: json['my_reaction'],
       poll: json['poll'] != null ? PollData.fromJson(json['poll']) : null,
+      commentId: json['comment_id'],
+      commentLikesCount: json['comment_likes_count'] as int? ?? 0,
+      commentDislikesCount: json['comment_dislikes_count'] as int? ?? 0,
+      myCommentReaction: json['my_comment_reaction'] as bool?,
+      newsLikesCount: json['news_likes_count'] as int? ?? 0,
+      newsDislikesCount: json['news_dislikes_count'] as int? ?? 0,
+      myNewsReaction: json['my_news_reaction'] as bool?,
     );
   }
 
-  NewsItem copyWith({PollData? poll}) {
+  NewsItem copyWith({
+    PollData? poll,
+    int? newsLikesCount,
+    int? newsDislikesCount,
+    bool? myNewsReaction,
+    bool clearNewsReaction = false,
+  }) {
     return NewsItem(
       id: id,
       eventType: eventType,
@@ -60,15 +79,20 @@ class NewsItem {
       user: user,
       chip: chip,
       userRating: userRating,
-      commentId: commentId,
-      likesCount: likesCount,
-      dislikesCount: dislikesCount,
-      myReaction: myReaction,
       extraData: extraData,
       poll: poll ?? this.poll,
+      commentId: commentId,
+      commentLikesCount: commentLikesCount,
+      commentDislikesCount: commentDislikesCount,
+      myCommentReaction: myCommentReaction,
+      newsLikesCount: newsLikesCount ?? this.newsLikesCount,
+      newsDislikesCount: newsDislikesCount ?? this.newsDislikesCount,
+      myNewsReaction:
+          clearNewsReaction ? null : (myNewsReaction ?? this.myNewsReaction),
     );
   }
 }
+
 
 class NewsUser {
   final int id;

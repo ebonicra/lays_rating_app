@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 
 import 'package:lays_rating/models/news_item.dart';
 import 'package:lays_rating/widgets/chips/chip_details_page.dart';
@@ -23,6 +25,8 @@ class FriendCommentContent extends StatelessWidget {
     required this.isReactionLoading,
     required this.onLike,
     required this.onDislike,
+    required this.onShowCommentDislikes,
+    required this.onShowCommentLikes,
   });
 
   final NewsItem item;
@@ -35,6 +39,8 @@ class FriendCommentContent extends StatelessWidget {
   final bool isReactionLoading;
   final VoidCallback onLike;
   final VoidCallback onDislike;
+  final VoidCallback? onShowCommentLikes;
+  final VoidCallback? onShowCommentDislikes;
 
   static const int _maxLines = 4;
 
@@ -78,25 +84,24 @@ class FriendCommentContent extends StatelessWidget {
                 },
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
+                  child: CachedNetworkImage(
+                    imageUrl: '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
                     width: 90,
                     height: 120,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 90,
-                        height: 120,
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        child: Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            color: theme.colorScheme.onSurfaceVariant,
-                            size: 30,
-                          ),
-                        ),
-                      );
-                    },
+                    memCacheWidth: (90 * MediaQuery.devicePixelRatioOf(context)).round(),
+                    placeholder: (context, url) => Container(
+                      width: 90,
+                      height: 120,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      width: 90,
+                      height: 120,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: const Center(child: Icon(Icons.broken_image)),
+                    ),
                   ),
                 ),
               ),
@@ -239,6 +244,7 @@ class FriendCommentContent extends StatelessWidget {
           activeColor: Colors.red,
           isLoading: isReactionLoading,
           onTap: onLike,
+          onLongPress: onShowCommentLikes,
         ),
         const SizedBox(width: 6),
         ReactionButton(
@@ -249,6 +255,7 @@ class FriendCommentContent extends StatelessWidget {
           activeColor: Colors.brown,
           isLoading: isReactionLoading,
           onTap: onDislike,
+          onLongPress: onShowCommentDislikes,
         ),
       ],
     );

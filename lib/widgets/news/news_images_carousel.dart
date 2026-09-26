@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:lays_rating/services/auth_service.dart';
 import 'package:lays_rating/widgets/common/full_screen_gallery.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 
 
 /// Карусель изображений новости
@@ -12,7 +14,7 @@ class NewsImagesCarousel extends StatelessWidget {
   });
 
   final List<String> imagePaths;
-  static const double _singleImageSize = 240;
+  static const double _singleImageSize = 260;
   static const double _carouselHeight = 150;
   static const double _carouselItemWidth = 150;
 
@@ -97,36 +99,24 @@ class _ImageTile extends StatelessWidget {
       onTap: onTap,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          '${AuthService.baseUrl}/news/images/$path',
+        child: CachedNetworkImage(
+          imageUrl: '${AuthService.baseUrl}/news/images/$path',
           width: width,
           height: height,
           fit: BoxFit.cover,
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) return child;
-            return Container(
-              width: width,
-              height: height,
-              color: colorScheme.surfaceContainerHighest,
-              child: const Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: width,
-              height: height,
-              color: colorScheme.surfaceContainerHighest,
-              child: Center(
-                child: Icon(
-                  Icons.broken_image,
-                  color: colorScheme.onSurfaceVariant,
-                  size: 32,
-                ),
-              ),
-            );
-          },
+          memCacheWidth: (width * MediaQuery.devicePixelRatioOf(context)).round(),
+          placeholder: (context, url) => Container(
+            width: width,
+            height: height,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          ),
+          errorWidget: (context, url, error) => Container(
+            width: width,
+            height: height,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: const Center(child: Icon(Icons.broken_image)),
+          ),
         ),
       ),
     );

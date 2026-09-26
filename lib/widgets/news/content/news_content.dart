@@ -9,6 +9,7 @@ import 'new_chip_content.dart';
 import 'new_follower_content.dart';
 import 'poll_content.dart';
 import 'rumor_content.dart';
+import 'news_reactions_bar.dart';
 
 /// Диспетчер содержимого новости: в зависимости от `eventType`
 /// выбирает нужный виджет.
@@ -29,11 +30,16 @@ class NewsContent extends StatelessWidget {
     // poll
     required this.onVote,
     required this.onRemoveVote,
+    // реакции новости (долгое нажатие)
+    this.onShowLikes,
+    this.onShowDislikes,
+    this.onShowCommentDislikes,
+    this.onShowCommentLikes,
   });
 
   final NewsItem item;
 
-  // === friend_comment ===
+  // === реакции (для friend_comment и для news-реакций) ===
   final bool isExpanded;
   final VoidCallback onToggleExpand;
   final bool isLiked;
@@ -48,8 +54,46 @@ class NewsContent extends StatelessWidget {
   final ValueChanged<int> onVote;
   final VoidCallback onRemoveVote;
 
+  final VoidCallback? onShowLikes;
+  final VoidCallback? onShowDislikes;
+
+  final VoidCallback? onShowCommentLikes;
+  final VoidCallback? onShowCommentDislikes;
+
+  bool get _isReactableNews {
+    final t = item.eventType;
+    return t == 'admin_post' || t == 'rumor' || t == 'poll';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final content = _buildContent(context);
+
+    // Для реагируемых новостей добавляем панель реакций снизу.
+    if (_isReactableNews) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          content,
+          NewsReactionsBar(
+            isLiked: isLiked,
+            isDisliked: isDisliked,
+            likesCount: likesCount,
+            dislikesCount: dislikesCount,
+            isLoading: isReactionLoading,
+            onLike: onLike,
+            onDislike: onDislike,
+            onShowLikes: onShowLikes,
+            onShowDislikes: onShowDislikes,
+          ),
+        ],
+      );
+    }
+
+    return content;
+  }
+
+  Widget _buildContent(BuildContext context) {
     switch (item.eventType) {
       case 'friend_comment':
         return FriendCommentContent(
@@ -63,6 +107,8 @@ class NewsContent extends StatelessWidget {
           isReactionLoading: isReactionLoading,
           onLike: onLike,
           onDislike: onDislike,
+          onShowCommentLikes: onShowCommentLikes,
+          onShowCommentDislikes: onShowCommentDislikes,
         );
       case 'new_follower':
         return NewFollowerContent(item: item);

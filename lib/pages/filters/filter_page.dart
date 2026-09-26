@@ -68,6 +68,11 @@ class _FilterPageState extends State<FilterPage> {
                     onToggle: (type) => _run(
                       () => _controller.toggleFilter(type),
                     ),
+                    statsFor: (type) {
+                      final s = _controller.stats[type.value];
+                      if (s == null) return null;
+                      return (total: s.total, tried: s.tried);
+                    },
                   ),
                 ),
                 const SizedBox(height: 2),

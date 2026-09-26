@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:lays_rating/models/stats/stats_chip.dart';
 import 'package:lays_rating/widgets/chips/chip_details_page.dart';
@@ -148,37 +149,24 @@ class _ChipTile extends StatelessWidget {
     return ListTile(
       leading: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
+        child: CachedNetworkImage(
+          imageUrl: '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
           width: 60,
           height: 70,
-          cacheWidth: 120,
           fit: BoxFit.cover,
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) return child;
-            return Container(
-              width: 60,
-              height: 70,
-              color: colorScheme.surfaceContainerHighest,
-              child: const Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: 60,
-              height: 70,
-              color: colorScheme.surfaceContainerHighest,
-              child: Center(
-                child: Icon(
-                  Icons.broken_image,
-                  color: colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-              ),
-            );
-          },
+          memCacheWidth: (60 * MediaQuery.devicePixelRatioOf(context)).round(),
+          placeholder: (context, url) => Container(
+            width: 60,
+            height: 70,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          ),
+          errorWidget: (context, url, error) => Container(
+            width: 60,
+            height: 70,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: const Center(child: Icon(Icons.broken_image)),
+          ),
         ),
       ),
       title: Text(chip.name),

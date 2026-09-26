@@ -45,7 +45,7 @@ class _NewsPageState extends State<NewsPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_controller.error != null) {
+    if (_controller.error != null && (_controller.news?.isEmpty ?? true)) {
       return _buildError();
     }
 
@@ -55,7 +55,7 @@ class _NewsPageState extends State<NewsPage> {
     }
 
     return RefreshIndicator(
-      onRefresh: _controller.load,
+      onRefresh: _controller.refresh,
       child: ListView.separated(
         padding: EdgeInsets.zero,
         itemCount: news.length,
@@ -66,6 +66,7 @@ class _NewsPageState extends State<NewsPage> {
             item: item,
             onDeleted: () => _controller.removeItem(item.id),
             onVoted: _controller.updateItem,
+            onReacted: _controller.updateItem,
           );
         },
       ),
@@ -102,29 +103,32 @@ class _NewsPageState extends State<NewsPage> {
   Widget _buildEmpty(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.newspaper,
-            size: 48,
-            color: colorScheme.outline,
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Пока нет новостей',
-            style: TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Подпишись на друзей, чтобы видеть их активность',
-            style: TextStyle(
-              fontSize: 13,
-              color: colorScheme.onSurfaceVariant,
+    return RefreshIndicator(
+      onRefresh: _controller.refresh,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.newspaper, size: 48, color: colorScheme.outline),
+                    const SizedBox(height: 12),
+                    const Text('Пока нет новостей', style: TextStyle(fontSize: 16)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Подпишись на друзей, чтобы видеть их активность',
+                      style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

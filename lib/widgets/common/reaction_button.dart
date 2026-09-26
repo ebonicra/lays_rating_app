@@ -11,6 +11,7 @@ class ReactionButton extends StatelessWidget {
     required this.activeColor,
     required this.isLoading,
     required this.onTap,
+    this.onLongPress,
   });
 
   final IconData icon;
@@ -21,6 +22,9 @@ class ReactionButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onTap;
 
+  /// Долгое нажатие — например, чтобы открыть список тех, кто лайкнул/дизлайкнул.
+  final VoidCallback? onLongPress;
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -28,9 +32,10 @@ class ReactionButton extends StatelessWidget {
 
     return InkWell(
       onTap: isLoading ? null : onTap,
+      onLongPress: isLoading ? null : onLongPress,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -39,7 +44,7 @@ class ReactionButton extends StatelessWidget {
               size: 18,
               color: color,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 1),
             Text(
               '$count',
               style: TextStyle(

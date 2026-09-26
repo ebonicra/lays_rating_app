@@ -7,6 +7,24 @@ import 'package:lays_rating/models/chip_rating_with_user.dart';
 import 'auth_service.dart';
 
 
+class ChipCategoryStats {
+  const ChipCategoryStats({
+    required this.total,
+    required this.tried,
+  });
+
+  final int total;
+  final int tried;
+
+  factory ChipCategoryStats.fromJson(Map<String, dynamic> json) {
+    return ChipCategoryStats(
+      total: json['total'] as int? ?? 0,
+      tried: json['tried'] as int? ?? 0,
+    );
+  }
+}
+
+
 class ChipService {
   static const String baseUrl = AuthService.baseUrl;
 
@@ -49,6 +67,33 @@ class ChipService {
     }
 
     return LaysChip.fromJson(jsonDecode(response.body));
+  }
+
+  /// Статистика по категориям: сколько всего чипсов в категории
+  /// и сколько из них пользователь попробовал.
+  static Future<Map<String, ChipCategoryStats>> getStats() async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception('Не авторизован');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/chips/stats'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Не удалось загрузить статистику');
+    }
+
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    final stats = data['stats'] as Map<String, dynamic>;
+
+    return stats.map(
+      (key, value) => MapEntry(
+        key,
+        ChipCategoryStats.fromJson(value as Map<String, dynamic>),
+      ),
+    );
   }
 
   static Future<void> updateChip({

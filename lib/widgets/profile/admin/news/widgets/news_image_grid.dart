@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 
 import 'package:lays_rating/models/news_image.dart';
 import 'package:lays_rating/services/auth_service.dart';
@@ -103,37 +105,25 @@ class _ImagePreview extends StatelessWidget {
 
     // remote
     final url = '${AuthService.baseUrl}/news/images/${image.remotePath}';
-    final colorScheme = Theme.of(context).colorScheme;
 
-    return Image.network(
-      url,
+    return CachedNetworkImage(
+      imageUrl: url,
       width: _itemSize,
       height: _itemSize,
       fit: BoxFit.cover,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return Container(
-          width: _itemSize,
-          height: _itemSize,
-          color: colorScheme.surfaceContainerHighest,
-          child: const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          width: _itemSize,
-          height: _itemSize,
-          color: colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: Icon(
-              Icons.broken_image,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        );
-      },
+      memCacheWidth: (_itemSize * MediaQuery.devicePixelRatioOf(context)).round(),
+      placeholder: (context, url) => Container(
+        width: _itemSize,
+        height: _itemSize,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      errorWidget: (context, url, error) => Container(
+        width: _itemSize,
+        height: _itemSize,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: const Center(child: Icon(Icons.broken_image)),
+      ),
     );
   }
 }

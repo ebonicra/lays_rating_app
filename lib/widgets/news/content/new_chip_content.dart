@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 
 import 'package:lays_rating/models/news_item.dart';
 import 'package:lays_rating/widgets/chips/chip_details_page.dart';
@@ -48,24 +50,24 @@ class NewChipContent extends StatelessWidget {
             },
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
+              child: CachedNetworkImage(
+                imageUrl: '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
                 width: double.infinity,
                 height: 230,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 200,
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: Center(
-                      child: Icon(
-                        Icons.broken_image,
-                        color: theme.colorScheme.onSurfaceVariant,
-                        size: 40,
-                      ),
-                    ),
-                  );
-                },
+                memCacheWidth: (230 * MediaQuery.devicePixelRatioOf(context)).round(),
+                placeholder: (context, url) => Container(
+                  width: 230,
+                  height: 230,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  width: 230,
+                  height: 230,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: const Center(child: Icon(Icons.broken_image)),
+                ),
               ),
             ),
           ),

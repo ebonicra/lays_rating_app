@@ -145,7 +145,6 @@ class _FollowTile extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.w600),
       ),
       subtitle: Text('@${user.username}'),
-      // trailing: showRating ? _buildRatingBadge() : null,
       trailing: showRating ? RatingBadge(rating: user.averageRating ?? 0) : null,
       onTap: () {
         Navigator.pop(context);

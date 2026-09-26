@@ -10,11 +10,14 @@ class FilterGrid extends StatelessWidget {
     required this.types,
     required this.selected,
     required this.onToggle,
+    this.statsFor,
   });
 
   final List<ChipType> types;
   final Set<String> selected;
   final ValueChanged<ChipType> onToggle;
+  final ({int total, int tried})? Function(ChipType type)? statsFor;
+
 
   @override
   Widget build(BuildContext context) {
@@ -35,11 +38,14 @@ class FilterGrid extends StatelessWidget {
       itemBuilder: (context, index) {
         final type = types[index];
         final isSelected = selected.contains(type.value);
+        final stats = statsFor?.call(type);
 
         return FilterCard(
           type: type,
           selected: isSelected,
           onTap: () => onToggle(type),
+          total: stats?.total,
+          tried: stats?.tried,
         );
       },
     );

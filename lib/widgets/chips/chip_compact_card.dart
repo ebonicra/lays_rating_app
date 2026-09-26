@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:lays_rating/models/chip.dart';
 import 'package:lays_rating/services/auth_service.dart';
+
 
 const double _imageWidth = 100;
 const double _imageHeight = 130;
@@ -32,38 +34,24 @@ class ChipCompactCard extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
+                child: CachedNetworkImage(
+                  imageUrl: '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
                   width: _imageWidth,
                   height: _imageHeight,
-                  cacheWidth:
-                      (_imageWidth * MediaQuery.devicePixelRatioOf(context))
-                          .round(),
                   fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      width: _imageWidth,
-                      height: _imageHeight,
-                      color: colorScheme.surfaceContainerHighest,
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: _imageWidth,
-                      height: _imageHeight,
-                      color: colorScheme.surfaceContainerHighest,
-                      child: Center(
-                        child: Icon(
-                          Icons.broken_image,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    );
-                  },
+                  memCacheWidth: (_imageWidth * MediaQuery.devicePixelRatioOf(context)).round(),
+                  placeholder: (context, url) => Container(
+                    width: _imageWidth,
+                    height: _imageHeight,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    width: _imageWidth,
+                    height: _imageHeight,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: const Center(child: Icon(Icons.broken_image)),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),

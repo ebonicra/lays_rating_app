@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 
 import 'package:lays_rating/models/chip.dart';
 import 'package:lays_rating/models/chip_form_data.dart';
@@ -374,13 +376,17 @@ class ChipFormState extends State<ChipForm> {
     }
 
     if (chip != null) {
-      return Image.network(
-        '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
+      return CachedNetworkImage(
+        imageUrl: '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _emptyPreview(theme, size),
-      );
+        errorWidget: (context, url, error) => Container(
+          width: size,
+          height: size,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: const Center(child: Icon(Icons.broken_image)),
+        ),      );
     }
     return _emptyPreview(theme, size);
   }

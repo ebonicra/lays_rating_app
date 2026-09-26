@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/chip_comment.dart';
+import 'package:lays_rating/models/comment_reaction.dart';
+import 'package:lays_rating/widgets/common/reactions_sheet.dart';
 import 'auth_service.dart';
 
 
@@ -146,4 +148,34 @@ class CommentsService {
       throw Exception('Не удалось удалить реакцию: ${response.statusCode}');
     }
   }
+
+
+  static Future<CommentReactionsList> getCommentReactions(int commentId) async {
+    final token = await AuthService.getToken();
+    if (token == null) throw Exception("No token");
+
+    final response = await http.get(
+      Uri.parse("${AuthService.baseUrl}/comments/$commentId/reactions"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      throw Exception(data['detail'] ?? 'Не удалось загрузить реакции');
+    }
+
+    return CommentReactionsList.fromJson(
+      jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>,
+    );
+  }
+}
+
+
+extension CommentReactionUserMapper on CommentReactionUser {
+  ReactionUser toReactionUser() => ReactionUser(
+    id: id,
+    username: username,
+    displayName: displayName,
+    avatarUrl: avatarUrl,
+  );
 }

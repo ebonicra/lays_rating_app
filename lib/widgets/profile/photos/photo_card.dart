@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:lays_rating/constants/photo_constants.dart';
 import 'package:lays_rating/models/photo/photo.dart';
@@ -29,35 +30,24 @@ class PhotoCard extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: onTap,
-            child: Image.network(
-              '${AuthService.baseUrl}/photos/images/${photo.imagePath}',
+            child: CachedNetworkImage(
+              imageUrl: '${AuthService.baseUrl}/photos/images/${photo.imagePath}',
               width: PhotoConstants.cardSize,
               height: PhotoConstants.cardSize,
               fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return Container(
-                  width: PhotoConstants.cardSize,
-                  height: PhotoConstants.cardSize,
-                  color: colorScheme.surfaceContainerHighest,
-                  child: const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: PhotoConstants.cardSize,
-                  height: PhotoConstants.cardSize,
-                  color: colorScheme.surfaceContainerHighest,
-                  child: Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                );
-              },
+              memCacheWidth: (PhotoConstants.cardSize * MediaQuery.devicePixelRatioOf(context)).round(),
+              placeholder: (context, url) => Container(
+                width: PhotoConstants.cardSize,
+                height: PhotoConstants.cardSize,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+              errorWidget: (context, url, error) => Container(
+                width: PhotoConstants.cardSize,
+                height: PhotoConstants.cardSize,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: const Center(child: Icon(Icons.broken_image)),
+              ),
             ),
           ),
           Positioned(

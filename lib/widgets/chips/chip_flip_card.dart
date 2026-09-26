@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'package:lays_rating/models/chip.dart';
 import 'package:lays_rating/services/auth_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 
 const double _cardSize = 320;
 const double _cardRadius = 24;
@@ -105,35 +107,24 @@ class _ChipFlipCardState extends State<ChipFlipCard>
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
+              child: CachedNetworkImage(
+                imageUrl: '${AuthService.baseUrl}/chips/images/${chip.imagePath}',
                 width: _cardSize,
                 height: _cardSize,
                 fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    width: _cardSize,
-                    height: _cardSize,
-                    color: colorScheme.surfaceContainerHighest,
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: _cardSize,
-                    height: _cardSize,
-                    color: colorScheme.surfaceContainerHighest,
-                    child: Center(
-                      child: Icon(
-                        Icons.broken_image,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  );
-                },
+                memCacheWidth: (_cardSize * MediaQuery.devicePixelRatioOf(context)).round(),
+                placeholder: (context, url) => Container(
+                  width: _cardSize,
+                  height: _cardSize,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  width: _cardSize,
+                  height: _cardSize,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: const Center(child: Icon(Icons.broken_image)),
+                ),
               ),
             ),
             _buildHint('Детали'),

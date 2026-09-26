@@ -18,7 +18,7 @@ class AverageRatingBadge extends StatelessWidget {
     final colors = _ratingColors(rating);
 
     return GestureDetector(
-      onLongPress: onLongPress,
+      onTap: onLongPress,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(

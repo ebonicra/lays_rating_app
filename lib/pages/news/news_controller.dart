@@ -8,26 +8,41 @@ class NewsController extends ChangeNotifier {
   NewsController();
 
   List<NewsItem>? _news;
-  bool _isLoading = true;
+  bool _isLoading = true;      // первая загрузка
+  bool _isRefreshing = false;  // pull-to-refresh
   String? _error;
 
   List<NewsItem>? get news => _news;
   bool get isLoading => _isLoading;
+  bool get isRefreshing => _isRefreshing;
   String? get error => _error;
 
+  /// Первая загрузка (когда страница только открылась).
   Future<void> load() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
+    await _fetch();
+    _isLoading = false;
+    notifyListeners();
+  }
 
+  /// Pull-to-refresh: не сбрасывает список, не переключает экран в лоадер.
+  Future<void> refresh() async {
+    _isRefreshing = true;
+    notifyListeners();
+    await _fetch();
+    _isRefreshing = false;
+    notifyListeners();
+  }
+
+  Future<void> _fetch() async {
     try {
       _news = await NewsService.getFeed();
+      _error = null;
     } catch (e) {
-      debugPrint('NewsController.load error: $e');
+      debugPrint('NewsController._fetch error: $e');
       _error = 'Не удалось загрузить новости';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 
