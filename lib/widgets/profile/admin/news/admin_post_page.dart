@@ -85,19 +85,15 @@ class _AdminPostPageState extends State<AdminPostPage> {
   bool _isDirty() {
     final news = widget.initialNews;
 
-    // Создание — dirty, если что-то есть
     if (news == null) {
       return _textController.text.trim().isNotEmpty || _images.isNotEmpty;
     }
 
-    // Редактирование
     final originalText = (news.text ?? '').trim();
     if (_textController.text.trim() != originalText) return true;
 
-    // Если появились новые локальные картинки — dirty
     if (_images.any((i) => i.isLocal)) return true;
 
-    // Если количество серверных картинок изменилось — dirty
     final originalCount = (news.extraData?['chips'] as List?)?.length ?? 0;
     return _images.length != originalCount;
   }

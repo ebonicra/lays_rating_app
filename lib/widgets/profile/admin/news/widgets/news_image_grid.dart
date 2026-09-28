@@ -7,7 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lays_rating/models/news_image.dart';
 import 'package:lays_rating/services/auth_service.dart';
 
-const double _itemSize = 160;
+const double _itemSize = 100;
 const double _gap = 8;
 
 /// Горизонтальная карусель картинок для формы новости.

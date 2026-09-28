@@ -35,10 +35,6 @@ class AdminPostContent extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        // if (chips.isNotEmpty) ...[
-        //   _AdminPostImagesRow(chips: chips),
-        //   const SizedBox(height: 12),
-        // ],
 
         if (chips.isNotEmpty) ...[
           NewsImagesCarousel(

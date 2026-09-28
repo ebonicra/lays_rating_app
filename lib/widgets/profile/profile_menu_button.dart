@@ -17,13 +17,14 @@ class ProfileMenuButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final iconColor = colorScheme.onSurface;
 
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      constraints: const BoxConstraints(maxWidth: 220),
+      constraints: const BoxConstraints(maxWidth: 180),
       onSelected: (value) {
         switch (value) {
           case 'edit':
@@ -38,47 +39,47 @@ class ProfileMenuButton extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'edit',
-          height: 40,
-          child: ListTile(
-            leading: Icon(Icons.edit_outlined, size: 20),
-            title: Text(
-              'Редактировать',
-              style: TextStyle(fontSize: 14),
-            ),
-            contentPadding: EdgeInsets.zero,
+          height: 45,
+          child: Row(
+            children: [
+              Icon(Icons.edit_outlined, size: 18, color: iconColor),
+              SizedBox(width: 10),
+              Text('Редактировать', style: TextStyle(fontSize: 12)),
+            ],
           ),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'feedback',
-          height: 40,
-          child: ListTile(
-            leading: Icon(Icons.mail_outline_rounded, size: 20),
-            title: Text(
-              'Обратная связь',
-              style: TextStyle(fontSize: 14),
-            ),
-            contentPadding: EdgeInsets.zero,
+          height: 45,
+          child: Row(
+            children: [
+              Icon(Icons.mail_outline_rounded, size: 18, color: iconColor),
+              SizedBox(width: 10),
+              Text('Обратная связь', style: TextStyle(fontSize: 12)),
+            ],
           ),
         ),
         PopupMenuItem(
           value: 'delete',
-          height: 40,
-          child: ListTile(
-            leading: Icon(
-              Icons.delete_outline,
-              size: 20,
-              color: colorScheme.error,
-            ),
-            title: Text(
-              'Удалить аккаунт',
-              style: TextStyle(
+          height: 45,
+          child: Row(
+            children: [
+              Icon(
+                Icons.delete_outline,
+                size: 18,
                 color: colorScheme.error,
-                fontSize: 14,
               ),
-            ),
-            contentPadding: EdgeInsets.zero,
+              const SizedBox(width: 10),
+              Text(
+                'Удалить аккаунт',
+                style: TextStyle(
+                  color: colorScheme.error,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
         ),
       ],

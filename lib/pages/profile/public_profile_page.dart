@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'package:lays_rating/pages/profile/public_profile_controller.dart';
+import 'package:lays_rating/services/user_service.dart';
+import 'package:lays_rating/widgets/profile/delete_user_dialog.dart';
 import 'package:lays_rating/widgets/profile/photos/photo_carousel.dart';
 import 'package:lays_rating/widgets/profile/profile_follow_button.dart';
 import 'package:lays_rating/widgets/profile/profile_follows_me_badge.dart';
 import 'package:lays_rating/widgets/profile/profile_header.dart';
 import 'package:lays_rating/widgets/profile/stats/profile_stats_carousel.dart';
-
 
 class PublicProfilePage extends StatefulWidget {
   const PublicProfilePage({
@@ -36,6 +37,14 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
     super.dispose();
   }
 
+  bool get _canDelete {
+    final me = UserService.currentUser;
+    if (me == null) return false;
+    if (!me.isAdmin) return false;
+    if (me.id == widget.userId) return false;
+    return true;
+  }
+
   Future<void> _toggleFollow() async {
     try {
       await _controller.toggleFollow();
@@ -44,7 +53,36 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Не удалось выполнить действие')
+          content: Text('Не удалось выполнить действие'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteUser() async {
+    final user = _controller.user;
+    if (user == null) return;
+
+    final confirmed = await DeleteUserDialog.show(context, user.username);
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await _controller.deleteUser();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Пользователь удалён'),
+        ),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      debugPrint('PublicProfilePage._deleteUser error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Не удалось удалить пользователя'),
         ),
       );
     }
@@ -75,7 +113,17 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(user.displayName)),
+      appBar: AppBar(
+        title: Text(user.displayName),
+        actions: [
+          if (_canDelete)
+            IconButton(
+              onPressed: _deleteUser,
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Удалить пользователя',
+            ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

@@ -8,12 +8,14 @@ class AdminMenuCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +25,16 @@ class AdminMenuCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: ListTile(
-          leading: Icon(
-            icon,
-            color: colorScheme.primary,
-            size: 28,
+          leading: Badge(
+            isLabelVisible: badgeCount > 0,
+            label: Text('$badgeCount'),
+            backgroundColor: colorScheme.error,
+            textColor: colorScheme.onError,
+            child: Icon(
+              icon,
+              color: colorScheme.primary,
+              size: 28,
+            ),
           ),
           title: Text(
             title,

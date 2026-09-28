@@ -11,4 +11,11 @@ enum FeedbackType {
   final String value;
   final String label;
   final String emoji;
+
+  static FeedbackType fromValue(String value) {
+    return FeedbackType.values.firstWhere(
+      (t) => t.value == value,
+      orElse: () => FeedbackType.other,
+    );
+  }
 }

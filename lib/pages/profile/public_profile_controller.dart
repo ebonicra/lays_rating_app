@@ -47,6 +47,15 @@ class PublicProfileController extends ChangeNotifier {
     }
   }
 
+  Future<void> deleteUser() async {
+    try {
+      await UserService.deleteUser(userId);
+    } catch (e) {
+      debugPrint('PublicProfileController.deleteUser error: $e');
+      rethrow;
+    }
+  }
+
   Future<void> toggleFollow() async {
     if (_isFollowLoading) return;
 
